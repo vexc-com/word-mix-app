@@ -59,6 +59,13 @@ const config = {
           "accent-foreground": "hsl(var(--sidebar-accent-foreground))",
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
+        },
+        'off-white': '#F9FAFB',
+        indigo: {
+          '500': '#4F46E5',
+        },
+        pink: {
+          '500': '#EC4899',
         }
       },
       borderRadius: {

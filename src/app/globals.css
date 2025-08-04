@@ -10,7 +10,7 @@
     --card-foreground: 224 71% 4%;
     --popover: 0 0% 100%;
     --popover-foreground: 224 71% 4%;
-    --primary: 243 96% 62%;
+    --primary: 242 84% 61%;
     --primary-foreground: 0 0% 100%;
     --secondary: 240 5% 96%;
     --secondary-foreground: 224 71% 4%;
@@ -22,7 +22,7 @@
     --destructive-foreground: 0 0% 100%;
     --border: 240 6% 90%;
     --input: 240 6% 90%;
-    --ring: 243 96% 62%;
+    --ring: 242 84% 61%;
     --radius: 0.5rem;
 
     --sidebar-background: 224 71% 4%;
@@ -46,19 +46,19 @@
     --card-foreground: 210 40% 98%;
     --popover: 224 71% 4%;
     --popover-foreground: 210 40% 98%;
-    --primary: 243 96% 62%;
+    --primary: 242 84% 61%;
     --primary-foreground: 0 0% 100%;
     --secondary: 215 28% 17%;
     --secondary-foreground: 210 40% 98%;
     --muted: 215 28% 17%;
     --muted-foreground: 215 20% 65%;
-    --accent: 210 100% 56%;
+    --accent: 242 84% 61%;
     --accent-foreground: 210 40% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
     --border: 215 28% 17%;
     --input: 215 28% 17%;
-    --ring: 243 96% 62%;
+    --ring: 242 84% 61%;
 
     --sidebar-background: 224 71% 4%;
     --sidebar-foreground: 210 40% 98%;
@@ -81,5 +81,11 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer components {
+  .btn-gradient {
+    @apply bg-gradient-to-r from-indigo-500 to-pink-500 text-white hover:opacity-90 transition-opacity;
   }
 }

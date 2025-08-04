@@ -8,7 +8,7 @@ import { z } from "zod";
 
 import { checkDomains, type DomainResult } from "@/app/actions";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Form,
@@ -139,7 +139,7 @@ export default function DomainSeekerPage() {
   return (
     <main className="container mx-auto max-w-4xl px-4 py-16 md:py-24">
       <div className="text-center">
-        <h1 className="text-4xl font-bold tracking-tight md:text-5xl lg:text-6xl">
+        <h1 className="text-4xl font-extrabold tracking-tight md:text-5xl lg:text-6xl">
           Domain Seeker
         </h1>
         <p className="mt-6 max-w-2xl mx-auto text-lg text-muted-foreground">
@@ -221,7 +221,7 @@ export default function DomainSeekerPage() {
               <div className={`text-sm ${totalChecks > MAX_DOMAINS ? 'text-destructive' : 'text-muted-foreground'}`}>
                 {totalChecks} / {MAX_DOMAINS} domains
               </div>
-              <Button type="submit" size="lg" disabled={isSearching || totalChecks > MAX_DOMAINS || totalChecks === 0} className="w-full sm:w-auto">
+              <Button type="submit" size="lg" disabled={isSearching || totalChecks > MAX_DOMAINS || totalChecks === 0} className="w-full sm:w-auto btn-gradient">
                 {isSearching ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
                 {isSearching ? `Checking... ${Math.round(progress)}%` : "Seek Domains"}
               </Button>
@@ -243,10 +243,10 @@ export default function DomainSeekerPage() {
       )}
 
       <div className="mt-12 grid md:grid-cols-2 gap-8">
-        <Card className="shadow-sm">
+        <Card className="shadow-lg bg-off-white border-gray-200/50">
           <CardHeader>
             <CardTitle className="text-primary flex items-center">
-              <Check className="mr-2 text-green-500"/> Available ({availableDomains.length})
+              <Check className="mr-2 text-pink-500"/> Available ({availableDomains.length})
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -274,7 +274,7 @@ export default function DomainSeekerPage() {
           </CardContent>
         </Card>
         
-        <Card className="shadow-sm">
+        <Card className="shadow-lg bg-off-white border-gray-200/50">
             <CardHeader>
                 <CardTitle className="flex items-center text-muted-foreground">
                     <X className="mr-2 text-red-500" />
