@@ -1,3 +1,4 @@
+
 "use server";
 
 import { z } from "zod";
@@ -50,9 +51,13 @@ export async function* checkDomains(
   }
 
   const { keywords1, keywords2, tlds } = validation.data;
+  
+  const splitKeywords = (keywords: string) => {
+    return keywords.split(/[\n,]/).map(k => k.trim().toLowerCase().replace(/[^a-z0-9-]/g, '')).filter(Boolean);
+  }
 
-  const list1 = keywords1.split("\n").map(k => k.trim().toLowerCase().replace(/[^a-z0-9-]/g, '')).filter(Boolean);
-  const list2 = (keywords2 || "").split("\n").map(k => k.trim().toLowerCase().replace(/[^a-z0-9-]/g, '')).filter(Boolean);
+  const list1 = splitKeywords(keywords1);
+  const list2 = splitKeywords(keywords2 || "");
 
   const firstSet = list1.length > 0 ? list1 : [""];
   const secondSet = list2.length > 0 ? list2 : [""];

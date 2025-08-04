@@ -79,15 +79,19 @@ export default function DomainSeekerPage() {
     if (!value) return;
     const presets = list === 'list1' ? presetLists1 : presetLists2;
     const keywords = (presets as any)[value] || [];
-    onChange(keywords.join('\n'));
+    onChange(keywords.join(', '));
   };
 
   const formValues = form.watch();
+  
+  const splitKeywords = (keywords: string) => {
+    return keywords.split(/[\n,]/).map(k => k.trim()).filter(Boolean);
+  }
 
   useEffect(() => {
     const { keywords1, keywords2, tlds } = form.getValues();
-    const list1 = (keywords1 || "").split('\n').map(k => k.trim()).filter(Boolean);
-    const list2 = (keywords2 || "").split('\n').map(k => k.trim()).filter(Boolean);
+    const list1 = splitKeywords(keywords1 || "");
+    const list2 = splitKeywords(keywords2 || "");
     const selectedTlds = tlds || [];
 
     const firstSet = list1.length > 0 ? list1 : [""];
@@ -200,7 +204,7 @@ export default function DomainSeekerPage() {
                         </Select>
                     </div>
                     <FormControl>
-                      <Textarea placeholder="cloud&#10;data&#10;web" {...field} rows={5} />
+                      <Textarea placeholder="cloud, data, web" {...field} rows={5} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -227,7 +231,7 @@ export default function DomainSeekerPage() {
                         </Select>
                     </div>
                     <FormControl>
-                      <Textarea placeholder="base&#10;stack&#10;flow" {...field} rows={5} />
+                      <Textarea placeholder="base, stack, flow" {...field} rows={5} />
                     </FormControl>
                     <FormDescription>Combine with List 1 to form names like 'cloudbase'.</FormDescription>
                   </FormItem>
