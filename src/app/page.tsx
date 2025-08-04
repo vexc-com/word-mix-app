@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/form";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 
@@ -34,6 +35,16 @@ const formSchema = z.object({
   keywords2: z.string().optional(),
   tlds: z.array(z.string()).min(1, { message: "Please select at least one TLD." }),
 });
+
+const presetLists1 = {
+  'Prefix Brandables': ['aqua', 'verve', 'zenith', 'nexus', 'pulse'],
+  'US Cities': ['newyork', 'chicago', 'houston', 'phoenix', 'dallas'],
+};
+
+const presetLists2 = {
+  'Suffix Words': ['ify', 'ly', 'able', 'hub', 'base'],
+  'Animals': ['panther', 'eagle', 'tiger', 'lion', 'bear'],
+};
 
 export default function DomainSeekerPage() {
   const [isPending, startTransition] = useTransition();
@@ -54,6 +65,17 @@ export default function DomainSeekerPage() {
       tlds: [".com", ".net", ".io", ".ai"],
     },
   });
+
+  const handlePresetChange = (
+    value: string,
+    list: 'list1' | 'list2',
+    onChange: (value: string) => void
+  ) => {
+    if (!value) return;
+    const presets = list === 'list1' ? presetLists1 : presetLists2;
+    const keywords = (presets as any)[value] || [];
+    onChange(keywords.join('\n'));
+  };
 
   const formValues = form.watch();
 
@@ -157,7 +179,19 @@ export default function DomainSeekerPage() {
                 name="keywords1"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Keyword List 1</FormLabel>
+                    <div className="flex justify-between items-center mb-2">
+                        <FormLabel>Keyword List 1</FormLabel>
+                        <Select onValueChange={(value) => handlePresetChange(value, 'list1', field.onChange)}>
+                            <SelectTrigger className="w-[180px] h-9">
+                                <SelectValue placeholder="Load a preset..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {Object.keys(presetLists1).map(name => (
+                                    <SelectItem key={name} value={name}>{name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
                     <FormControl>
                       <Textarea placeholder="cloud&#10;data&#10;web" {...field} rows={5} />
                     </FormControl>
@@ -170,7 +204,19 @@ export default function DomainSeekerPage() {
                 name="keywords2"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Keyword List 2 (optional)</FormLabel>
+                     <div className="flex justify-between items-center mb-2">
+                        <FormLabel>Keyword List 2 (optional)</FormLabel>
+                        <Select onValueChange={(value) => handlePresetChange(value, 'list2', field.onChange)}>
+                            <SelectTrigger className="w-[180px] h-9">
+                                <SelectValue placeholder="Load a preset..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {Object.keys(presetLists2).map(name => (
+                                    <SelectItem key={name} value={name}>{name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
                     <FormControl>
                       <Textarea placeholder="base&#10;stack&#10;flow" {...field} rows={5} />
                     </FormControl>
