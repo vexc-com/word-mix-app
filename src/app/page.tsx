@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -218,7 +219,7 @@ export default function DomainSeekerPage() {
             />
 
             <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-6">
-              <div className={`text-sm ${totalChecks > MAX_DOMAINS ? 'text-destructive' : 'text-muted-foreground'}`}>
+              <div className={`text-sm ${totalChecks > MAX_DOMAINS ? 'text-red-500' : 'text-muted-foreground'}`}>
                 {totalChecks} / {MAX_DOMAINS} domains
               </div>
               <Button type="submit" size="lg" disabled={isSearching || totalChecks > MAX_DOMAINS || totalChecks === 0} className="w-full sm:w-auto btn-gradient">
@@ -254,7 +255,7 @@ export default function DomainSeekerPage() {
               <ul className="space-y-2">
                 {availableDomains.map((d) => (
                   <li key={d.domain} className="flex justify-between items-center p-3 rounded-md hover:bg-secondary">
-                    <span className="font-medium text-primary">{d.domain}</span>
+                    <span className="font-medium text-indigo-600">{d.domain}</span>
                     <div className="flex items-center gap-2">
                         {d.price !== undefined && (
                           <span className="text-sm text-foreground font-semibold">${d.price?.toFixed(2)}</span>
@@ -303,3 +304,5 @@ export default function DomainSeekerPage() {
     </main>
   );
 }
+
+    
