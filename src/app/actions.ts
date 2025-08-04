@@ -36,8 +36,9 @@ async function checkDomainApi(domain: string, apiKey: string): Promise<Omit<Doma
     
     const data = await response.json();
 
+    console.log('Full Dynadot API response:', data);
+
     if (data.SearchResponse?.ResponseCode !== 0) {
-        console.error(`Dynadot API error for ${domain}:`, data.SearchResponse?.SearchHeader?.Status);
         return { status: "error" };
     }
 
@@ -57,7 +58,7 @@ async function checkDomainApi(domain: string, apiKey: string): Promise<Omit<Doma
 export async function checkDomains(
   input: z.infer<typeof formSchema>
 ): Promise<CheckDomainsResult> {
-  const apiKey = process.env.DYNADOT_API_KEY;
+  const apiKey = process.env.DYNADOT_KEY;
 
   if (!apiKey || apiKey === 'your_dynadot_api_key_here') {
     return { results: [], error: "API key not configured. Please add your Dynadot API key to the .env.local file.", progress: 100 };
