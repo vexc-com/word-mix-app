@@ -183,8 +183,8 @@ export default function DomainSeekerPage() {
                     <div className="flex justify-between items-center mb-2">
                         <FormLabel>Keyword List 1</FormLabel>
                         <Select onValueChange={(value) => handlePresetChange(value, 'list1', field.onChange)}>
-                            <div className="relative group gradient-border-focus rounded-md">
-                                <SelectTrigger className="w-[180px] h-9 border-2 border-transparent focus:border-transparent">
+                            <div className="relative group gradient-border rounded-md">
+                                <SelectTrigger className="w-[180px] h-9 border-2 border-transparent">
                                     <SelectValue placeholder="Load a preset..." />
                                 </SelectTrigger>
                             </div>
@@ -210,8 +210,8 @@ export default function DomainSeekerPage() {
                      <div className="flex justify-between items-center mb-2">
                         <FormLabel>Keyword List 2 (optional)</FormLabel>
                         <Select onValueChange={(value) => handlePresetChange(value, 'list2', field.onChange)}>
-                           <div className="relative group gradient-border-focus rounded-md">
-                                <SelectTrigger className="w-[180px] h-9 border-2 border-transparent focus:border-transparent">
+                           <div className="relative group gradient-border rounded-md">
+                                <SelectTrigger className="w-[180px] h-9 border-2 border-transparent">
                                     <SelectValue placeholder="Load a preset..." />
                                 </SelectTrigger>
                             </div>

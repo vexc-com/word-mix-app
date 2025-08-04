@@ -125,6 +125,19 @@
     background: linear-gradient(to right, #4F46E5, #EC4899);
   }
 
+  .gradient-border {
+    position: relative;
+    padding: 2px;
+    background: linear-gradient(to right, #4F46E5, #EC4899);
+    border-radius: 0.375rem; /* rounded-md */
+    z-index: 1;
+  }
+  
+  .gradient-border > * {
+    background-color: hsl(var(--background));
+    border-radius: calc(0.375rem - 2px);
+  }
+
   .tilt-card-container {
     transform-style: preserve-3d;
     position: relative;
@@ -142,4 +155,3 @@
     transition: opacity 0.3s ease;
   }
 }
-
