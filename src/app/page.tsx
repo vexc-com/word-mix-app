@@ -161,7 +161,7 @@ export default function DomainSeekerPage() {
 
   return (
     <main className="container mx-auto max-w-4xl px-4 py-16 md:py-24">
-      <div className="text-center">
+      <div className="text-center animate-fade-in-down">
         <h1 className="text-4xl font-extrabold tracking-tight md:text-5xl lg:text-6xl">
           Domain Seeker
         </h1>
@@ -170,7 +170,7 @@ export default function DomainSeekerPage() {
         </p>
       </div>
 
-      <div className="mt-12">
+      <div className="mt-12 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             <div className="grid md:grid-cols-2 gap-8">
@@ -284,12 +284,12 @@ export default function DomainSeekerPage() {
       )}
 
       {(availableDomains.length > 0 || unavailableDomains.length > 0) && !isSearching && (
-         <div className="text-center mt-12">
+         <div className="text-center mt-12 animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
             <p className="text-muted-foreground">Search complete. Found {availableDomains.length} available domains.</p>
         </div>
       )}
 
-      <div className="mt-12 grid md:grid-cols-2 gap-8">
+      <div className="mt-12 grid md:grid-cols-2 gap-8 animate-fade-in-up" style={{ animationDelay: '0.5s' }}>
         <Card className="shadow-lg bg-off-white border-gray-200/50">
           <CardHeader>
             <CardTitle className="text-primary flex items-center">
