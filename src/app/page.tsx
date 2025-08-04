@@ -7,7 +7,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-import { checkDomains, type DomainResult } from "@/app/actions";
+import { checkDomains, type DomainResult, type CheckDomainsResult } from "@/app/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -46,7 +46,7 @@ const formSchema = z.object({
 const presetLists1 = {
   'Prefix Brandables': ['a', 'ab', 'ac', 'acu', 'ada', 'adv', 'aero', 'af', 'ag', 'agro', 'ah', 'ai', 'aj', 'ak', 'al', 'ala', 'alfa', 'ali', 'alt', 'alter', 'am', 'ama', 'ami', 'amp', 'an', 'ana', 'ani', 'ant', 'anti', 'any', 'ap', 'aqua', 'ar', 'as', 'at', 'aus', 'av', 'ava', 'aw', 'ax', 'az', 'ba', 'bb', 'bc', 'bd', 'be', 'bel', 'bf', 'bi', 'bl', 'bo', 'br', 'bu', 'by', 'ca', 'ch', 'chi', 'ci', 'cine', 'cl', 'co', 'comm', 'con', 'cor', 'cosmo', 'cr', 'cre', 'crea', 'cu', 'cy', 'cyber', 'da', 'de', 'di', 'dia', 'digi', 'dis', 'do', 'dom', 'dr', 'du', 'duo', 'dy', 'dyna', 'ea', 'ec', 'econo', 'ed', 'eg', 'el', 'electro', 'em', 'en', 'epi', 'eq', 'equi', 'es', 'et', 'ex', 'exo', 'fa', 'fe', 'fi', 'fin', 'flex', 'flexi', 'flo', 'fo', 'fr', 'fu', 'ga', 'ge', 'glo', 'go', 'gr', 'ha', 'hd', 'he', 'heli', 'hi', 'ho', 'holo', 'hy', 'hyper', 'if', 'im', 'immo', 'in', 'indi', 'indo', 'infini', 'inno', 'int', 'intelli', 'inter', 'into', 'intra', 'iq', 'ir', 'is', 'it', 'ja', 'je', 'jo', 'ju', 'ka', 'ku', 'ky', 'li', 'lo', 'lu', 'ly', 'ma', 'macro', 'mag', 'mai', 'mar', 'mas', 'maxi', 'me', 'mem', 'meta', 'mi', 'mid', 'mo', 'mobi', 'mod', 'mon', 'mono', 'moto', 'mu', 'multi', 'my', 'mx', 'na', 'nat', 'navi', 'ne', 'neo', 'neu', 'neuro', 'nex', 'ni', 'no', 'nor', 'nu', 'ob', 'oc', 'of', 'og', 'ok', 'ol', 'omni', 'on', 'op', 'opti', 'or', 'os', 'out', 'ox', 'oz', 'pa', 'pe', 'penta', 'per', 'ph', 'photo', 'pi', 'po', 'poly', 'pr', 'pre', 'proto', 'pu', 'qi', 're', 'ri', 'ro', 'ru', 'sa', 'sci', 'se', 'sh', 'si', 'so', 'st', 'sub', 'super', 'sy', 'sym', 'syn', 'sync', 'ta', 'th', 'ti', 'to', 'tra', 'tr', 'trans', 'tu', 'ty', 'ui', 'ultra', 'un', 'uni', 'up', 'us', 'va', 'vc', 'velo', 'veri', 'vet', 'vo', 'vr', 'vu', 'wa', 'we', 'why', 'wi', 'with', 'wo', 'xy', 'ya', 'yo', 'za'],
   'Prefix Words': ['ace', 'access', 'action', 'active', 'add', 'admin', 'ads', 'adult', 'advantage', 'adventure', 'advertising', 'agent', 'agile', 'aim', 'air', 'alert', 'alive', 'alliance', 'aloha', 'alpha', 'alpine', 'alternative', 'always', 'amazing', 'angel', 'angry', 'animal', 'answer', 'antique', 'apex', 'apps', 'arcade', 'area', 'ark', 'arm', 'arrow', 'art', 'article', 'articles', 'artist', 'arts', 'ask', 'aspen', 'ass', 'asset', 'astro', 'atlas', 'atom', 'atomic', 'attorney', 'auction', 'audio', 'aurora', 'awesome', 'axon', 'babe', 'baby', 'back', 'bad', 'bag', 'ball', 'bamboo', 'banana', 'bang', 'bank', 'banner', 'bar', 'bare', 'bargain', 'barter', 'base', 'basic', 'bass', 'bat', 'bath', 'battery', 'battle', 'bay', 'beach', 'beam', 'bean', 'bear', 'beat', 'beautiful', 'beauty', 'bed', 'bee', 'bell', 'bella', 'ben', 'berry', 'best', 'beta', 'better', 'beyond', 'bid', 'big', 'bike', 'bill', 'bin', 'bingo', 'bird', 'bit', 'bitcoin', 'biz', 'black', 'blaze', 'blind', 'blink', 'bliss', 'blitz', 'block', 'blog', 'bloom', 'blue', 'board', 'boat', 'bob', 'body', 'bold', 'bond', 'bonus', 'book', 'booking', 'boom', 'boost', 'boss', 'bot', 'boulder', 'boutique', 'box', 'boy', 'brain', 'brand', 'bravo', 'brew', 'brick', 'bridal', 'bridge', 'bright', 'brilliant', 'brink', 'brisk', 'broad', 'broker', 'brown', 'bubble', 'bud', 'buddy', 'budget', 'buffalo', 'bug', 'build', 'building', 'bulk', 'bull', 'bus', 'business', 'busy', 'buy', 'buzz', 'byte', 'cab', 'cable', 'cad', 'cafe', 'cake', 'call', 'cam', 'camp', 'campaign', 'camping', 'campus', 'can', 'candy', 'cape', 'capital', 'captain', 'car', 'carbon', 'card', 'care', 'career', 'cargo', 'cars', 'cart', 'casa', 'case', 'cash', 'casino', 'cast', 'cat', 'catch', 'celeb', 'cell', 'cellular', 'center', 'central', 'century', 'ceo', 'certified', 'champion', 'change', 'channel', 'char', 'chart', 'chase', 'chat', 'cheap', 'check', 'chef', 'chem', 'cherry', 'chess', 'chic', 'child', 'chip', 'chocolate', 'choice', 'choose', 'chrome', 'church', 'cinema', 'circle', 'citizen', 'city', 'class', 'classic', 'clean', 'clear', 'clever', 'click', 'client', 'climate', 'climb', 'clip', 'clove', 'cloud', 'club', 'cms', 'coach', 'coast', 'coastal', 'coco', 'code', 'coffee', 'coin', 'cold', 'college', 'color', 'comet', 'comfort', 'commerce', 'commercial', 'common', 'community', 'comp', 'company', 'compare', 'complete', 'computer', 'concept', 'condo', 'connect', 'construction', 'consumer', 'contact', 'content', 'control', 'cook', 'cookie', 'cooking', 'cool', 'copper', 'copy', 'core', 'corp', 'corporate', 'cosmic', 'country', 'coupon', 'course', 'cover', 'cow', 'cpa', 'craft', 'crazy', 'create', 'creative', 'credit', 'crew', 'cricket', 'crm', 'cross', 'crowd', 'crown', 'cruise', 'crest', 'crystal', 'css', 'cube', 'culture', 'current', 'custom', 'customer', 'cut', 'cute', 'cycle', 'cyprus', 'daily', 'dan', 'dance', 'dark', 'dash', 'data', 'date', 'dating', 'day', 'dead', 'deal', 'dealer', 'deals', 'dear', 'death', 'debt', 'deco', 'deep', 'deluxe', 'demo', 'dental', 'desert', 'desi', 'design', 'designer', 'desk', 'desktop', 'destination', 'dial', 'diamond', 'diet', 'dig', 'direct', 'directory', 'dirty', 'discount', 'discover', 'discovery', 'diva', 'dive', 'divine', 'diy', 'dns', 'doc', 'doctor', 'docu', 'dog', 'dollar', 'dolphin', 'domain', 'don', 'door', 'dot', 'double', 'down', 'download', 'downtown', 'dragon', 'dream', 'dress', 'drink', 'drive', 'drift', 'droid', 'drop', 'drug', 'dry', 'duck', 'dutch', 'dynamic', 'eagle', 'ear', 'early', 'earth', 'east', 'eastern', 'easy', 'eat', 'eazy', 'echo', 'eden', 'edge', 'edit', 'education', 'egg', 'ego', 'elder', 'electric', 'electronic', 'elegant', 'elite', 'email', 'emerald', 'ember', 'empire', 'end', 'energy', 'engine', 'english', 'enjoy', 'enter', 'enterprise', 'entertainment', 'epic', 'equity', 'erotic', 'essential', 'estate', 'eternal', 'ethic', 'ethos', 'event', 'every', 'everyday', 'everything', 'evil', 'evolution', 'excel', 'excellent', 'exchange', 'exclusive', 'executive', 'exotic', 'experience', 'expert', 'explore', 'expo', 'express', 'extra', 'extreme', 'eye', 'fab', 'fabulous', 'face', 'factory', 'fair', 'faith', 'fake', 'fame', 'family', 'famous', 'fan', 'fancy', 'fantastic', 'fantasy', 'far', 'farm', 'fashion', 'fast', 'fat', 'fax', 'fed', 'feed', 'feel', 'fiber', 'field', 'fight', 'file', 'film', 'final', 'finance', 'financial', 'find', 'fine', 'fire', 'firm', 'first', 'fish', 'fit', 'fitness', 'fix', 'flair', 'flare', 'flash', 'flat', 'fleet', 'flight', 'flip', 'floor', 'flow', 'flower', 'fluid', 'fly', 'flying', 'flux', 'focus', 'follow', 'food', 'foot', 'force', 'forge', 'forest', 'forever', 'form', 'fortune', 'forum', 'four', 'fox', 'frame', 'free', 'freedom', 'fresh', 'friend', 'friendly', 'friends', 'frog', 'front', 'fruit', 'fuel', 'full', 'fun', 'fund', 'funky', 'funny', 'fuse', 'fusion', 'future', 'gadget', 'galaxy', 'gallery', 'gambling', 'game', 'gamer', 'games', 'gaming', 'garden', 'gas', 'gate', 'gator', 'gear', 'geek', 'gem', 'gene', 'general', 'generation', 'genesis', 'genius', 'genuine', 'get', 'ghost', 'giant', 'gift', 'gig', 'giga', 'girl', 'girls', 'give', 'glam', 'glass', 'gleam', 'global', 'globe', 'glow', 'goal', 'god', 'gold', 'golden', 'golf', 'good', 'gorilla', 'gospel', 'got', 'gourmet', 'grab', 'grace', 'grand', 'graphic', 'grasp', 'gray', 'great', 'greatest', 'green', 'grey', 'grid', 'groove', 'groovy', 'group', 'grow', 'guide', 'guitar', 'gulf', 'gun', 'guy', 'gym', 'hack', 'hair', 'half', 'halo', 'hand', 'handy', 'happy', 'hard', 'harmony', 'have', 'head', 'healing', 'health', 'healthy', 'heart', 'heat', 'heavy', 'helix', 'hell', 'hello', 'help', 'herb', 'herbal', 'heritage', 'hero', 'hey', 'hidden', 'high', 'hip', 'hire', 'history', 'hit', 'hobby', 'holiday', 'holistic', 'holy', 'home', 'homes', 'honest', 'honey', 'hop', 'hope', 'horizon', 'hospital', 'host', 'hosting', 'hot', 'hotel', 'house', 'how', 'hub', 'huge', 'human', 'hunt', 'hunter', 'hype', 'ice', 'icon', 'idea', 'ideal', 'identity', 'ignite', 'image', 'imagine', 'impact', 'income', 'incredible', 'independent', 'index', 'indie', 'indigo', 'industrial', 'industry', 'infinite', 'infinity', 'info', 'ink', 'inner', 'innovation', 'innovative', 'inside', 'insight', 'inspire', 'inspired', 'instant', 'insurance', 'insure', 'intelligent', 'interactive', 'international', 'internet', 'investment', 'investor', 'ion', 'iron', 'island', 'iso', 'ivory', 'ivy', 'jack', 'jam', 'java', 'jax', 'jay', 'jazz', 'jet', 'jewel', 'jewelry', 'job', 'jobs', 'joe', 'join', 'joint', 'jolt', 'journey', 'joy', 'juice', 'juicy', 'jumbo', 'jump', 'jungle', 'just', 'karma', 'keen', 'keep', 'ken', 'key', 'kick', 'kid', 'kids', 'killer', 'kin', 'kind', 'king', 'kingdom', 'kings', 'kiss', 'kit', 'kiwi', 'know', 'knowledge', 'lab', 'label', 'lady', 'lake', 'lan', 'land', 'language', 'large', 'laser', 'last', 'launch', 'lava', 'law', 'lawyer', 'lazy', 'lead', 'leader', 'leading', 'leaf', 'lean', 'learn', 'learning', 'lease', 'led', 'lee', 'legacy', 'legal', 'leisure', 'lemon', 'lending', 'leo', 'lets', 'level', 'lex', 'liberty', 'life', 'lifestyle', 'lift', 'light', 'lightning', 'like', 'lime', 'line', 'link', 'linked', 'links', 'lion', 'liquid', 'list', 'lit', 'lite', 'little', 'live', 'living', 'load', 'loan', 'local', 'lock', 'loco', 'log', 'logic', 'logo', 'long', 'look', 'loop', 'lost', 'lotus', 'loud', 'love', 'lovely', 'low', 'luck', 'lucky', 'lumen', 'luna', 'lunch', 'luxe', 'luxury', 'machine', 'mad', 'mag', 'magic', 'magical', 'mail', 'main', 'major', 'make', 'male', 'mall', 'mama', 'man', 'manage', 'mango', 'map', 'maple', 'marketing', 'mars', 'mass', 'massage', 'massive', 'master', 'mat', 'match', 'math', 'matrix', 'maui', 'max', 'maximum', 'may', 'med', 'media', 'medical', 'meet', 'meeting', 'mega', 'member', 'memo', 'memory', 'men', 'mental', 'menu', 'merchant', 'message', 'met', 'metal', 'metro', 'micro', 'mid', 'midnight', 'midwest', 'mighty', 'mike', 'mil', 'military', 'milk', 'millionaire', 'min', 'mind', 'mine', 'mini', 'mint', 'miracle', 'mirror', 'miss', 'mission', 'mister', 'mix', 'mob', 'mobile', 'model', 'modern', 'mojo', 'mom', 'mommy', 'moms', 'mondo', 'money', 'monkey', 'monster', 'moo', 'mood', 'moon', 'more', 'morning', 'mortgage', 'most', 'mother', 'motion', 'moto', 'motor', 'motorcycle', 'mountain', 'move', 'movie', 'moving', 'mrs', 'multimedia', 'muscle', 'muse', 'music', 'musical', 'mvp', 'mx', 'mystery', 'mystic', 'name', 'nation', 'national', 'native', 'natural', 'nature', 'nav', 'neat', 'need', 'neon', 'nerd', 'net', 'network', 'new', 'news', 'next', 'nexus', 'nice', 'niche', 'night', 'nine', 'ninja', 'nitro', 'noble', 'nomad', 'north', 'northern', 'not', 'note', 'nova', 'novo', 'now', 'nurse', 'nutri', 'nutrition', 'oath', 'oasis', 'occupy', 'ocean', 'odd', 'off', 'offer', 'office', 'official', 'oil', 'old', 'omega', 'one', 'online', 'only', 'open', 'option', 'orange', 'orbit', 'order', 'organic', 'original', 'our', 'out', 'outdoor', 'over', 'owl', 'own', 'pack', 'pad', 'page', 'paint', 'pak', 'pal', 'palm', 'pan', 'panda', 'papa', 'paper', 'papers', 'paradise', 'parent', 'park', 'pars', 'part', 'partner', 'party', 'pass', 'passion', 'pat', 'patent', 'patient', 'paul', 'pay', 'path', 'peace', 'peak', 'pearl', 'peer', 'pen', 'penny', 'people', 'per', 'perfect', 'performance', 'personal', 'pet', 'petro', 'pets', 'pharma', 'phone', 'photo', 'photography', 'piano', 'pic', 'pick', 'pico', 'picture', 'pig', 'pilot', 'pin', 'ping', 'pink', 'pirate', 'pitch', 'pix', 'pixel', 'pizza', 'place', 'plan', 'planet', 'plant', 'plastic', 'platinum', 'play', 'player', 'pled', 'plum', 'plus', 'pocket', 'pod', 'point', 'poker', 'polar', 'pool', 'pop', 'popular', 'port', 'portable', 'portal', 'portfolio', 'pos', 'post', 'poster', 'posters', 'posts', 'pot', 'power', 'practice', 'precision', 'premier', 'premium', 'press', 'prestige', 'pretty', 'price', 'prices', 'pride', 'prime', 'print', 'printer', 'printing', 'prints', 'prize', 'process', 'prod', 'product', 'production', 'productions', 'products', 'professional', 'professionals', 'professor', 'profile', 'profiles', 'profit', 'profits', 'program', 'programs', 'project', 'projects', 'promo', 'promos', 'promotion', 'promotions', 'proof', 'properties', 'property', 'pros', 'protect', 'protection', 'provider', 'proxy', 'pub', 'public', 'publications', 'publishing', 'pulse', 'pump', 'punch', 'punk', 'puppy', 'push', 'quality', 'queen', 'quest', 'questions', 'quick', 'quiz', 'quote', 'quotes', 'rabbit', 'race', 'racing', 'rack', 'radar', 'radio', 'rain', 'ranch', 'rank', 'ranking', 'rap', 'rat', 'rate', 'rates', 'rating', 'ray', 'reach', 'read', 'reader', 'ready', 'real', 'realestate', 'reality', 'realty', 'recipe', 'recipes', 'record', 'records', 'recovery', 'recruitment', 'red', 'reference', 'reg', 'register', 'registry', 'relief', 'rent', 'rental', 'rentals', 'rep', 'repair', 'report', 'reporter', 'reports', 'republic', 'res', 'rescue', 'research', 'resort', 'resource', 'resources', 'response', 'restaurant', 'results', 'resume', 'retail', 'retro', 'rev', 'review', 'reviews', 'revolution', 'reward', 'rewards', 'rex', 'rich', 'ride', 'rider', 'right', 'ring', 'rise', 'risk', 'rite', 'river', 'road', 'robot', 'rock', 'rocket', 'rocks', 'roll', 'room', 'rooms', 'root', 'rose', 'roulette', 'route', 'rules', 'run', 'runner', 'rush', 'safari', 'safe', 'safety', 'sale', 'sales', 'salon', 'sat', 'save', 'saver', 'savers', 'savings', 'savvy', 'say', 'scale', 'scan', 'scanner', 'scape', 'scapes', 'scene', 'school', 'schools', 'science', 'scoop', 'scope', 'score', 'scout', 'screen', 'scribe', 'script', 'scripts', 'sea', 'seal', 'search', 'secret', 'secrets', 'secure', 'security', 'see', 'seed', 'seek', 'seeker', 'select', 'selection', 'sell', 'seller', 'selling', 'send', 'senior', 'sense', 'seo', 'series', 'serv', 'serve', 'server', 'servers', 'service', 'services', 'set', 'seven', 'sexy', 'shgroup', 'shack', 'share', 'shares', 'sharing', 'shark', 'shed', 'sheet', 'shelf', 'shell', 'shield', 'shift', 'shine', 'ship', 'shirt', 'shirts', 'shoe', 'shoes', 'shop', 'shopper', 'shopping', 'shot', 'shots', 'show', 'showcase', 'shows', 'side', 'sight', 'sign', 'signal', 'signs', 'silver', 'simple', 'singles', 'sit', 'site', 'sites', 'six', 'ski', 'skill', 'skills', 'skin', 'skins', 'sky', 'slot', 'small', 'smart', 'smarts', 'smile', 'smith', 'sms', 'snap', 'snet', 'snow', 'soccer', 'social', 'socialmedia', 'society', 'soft', 'software', 'sol', 'solar', 'solution', 'solutions', 'son', 'song', 'songs', 'sonic', 'soul', 'sound', 'sounds', 'soup', 'source', 'sources', 'sourcing', 'south', 'spa', 'space', 'spaces', 'span', 'spark', 'speak', 'spec', 'special', 'specialist', 'specialists', 'specials', 'speed', 'sphere', 'spider', 'spin', 'spirit', 'splash', 'splus', 'sport', 'sports', 'spot', 'spots', 'spring', 'spy', 'squad', 'square', 'squared', 'stack', 'staff', 'staffing', 'stage', 'stamp', 'stand', 'star', 'stars', 'start', 'starter', 'stat', 'state', 'station', 'stats', 'status', 'steel', 'step', 'steps', 'ster', 'stick', 'stickers', 'stock', 'stocks', 'stone', 'stop', 'storage', 'store', 'stores', 'stories', 'storm', 'story', 'strategies', 'strategy', 'stream', 'streaming', 'streams', 'street', 'strong', 'student', 'studio', 'studios', 'study', 'stuff', 'style', 'styles', 'success', 'sugar', 'suite', 'summit', 'sun', 'super', 'superstore', 'supplier', 'supplies', 'supply', 'support', 'sure', 'surf', 'surfer', 'surfing', 'survey', 'surveys', 'swag', 'swap', 'sweet', 'switch', 'synergy', 'sys', 'system', 'systems', 'tab', 'table', 'tablet', 'tag', 'tags', 'talent', 'tales', 'talk', 'talks', 'tank', 'tap', 'tape', 'target', 'task', 'tastic', 'tax', 'taxi', 'tea', 'teacher', 'team', 'tech', 'technologies', 'technology', 'techs', 'tee', 'teen', 'teens', 'tees', 'tek', 'tel', 'tell', 'template', 'templates', 'ten', 'tennis', 'test', 'testing', 'tex', 'text', 'theater', 'theatre', 'theme', 'themes', 'theory', 'therapy', 'thing', 'things', 'think', 'thoughts', 'threads', 'ticket', 'tickets', 'tiger', 'time', 'times', 'tip', 'tips', 'tix', 'today', 'together', 'togo', 'tom', 'ton', 'tone', 'tones', 'too', 'tool', 'toolbox', 'tools', 'top', 'topia', 'tops', 'total', 'touch', 'tour', 'tours', 'tower', 'town', 'toy', 'toys', 'trac', 'trace', 'track', 'tracker', 'tracking', 'tracks', 'trade', 'trader', 'traders', 'trades', 'trading', 'traffic', 'trail', 'train', 'trainer', 'training', 'trak', 'trans', 'transfer', 'transport', 'travel', 'traveler', 'travels', 'trax', 'tree', 'trek', 'trend', 'trends', 'tribe', 'tricks', 'trip', 'trips', 'tron', 'truth', 'tube', 'tune', 'tunes', 'turk', 'turkey', 'tutor', 'tweet', 'tweets', 'twitter', 'two', 'txt', 'type', 'union', 'unit', 'united', 'universe', 'university', 'unlimited', 'update', 'updates', 'upload', 'url', 'usa', 'user', 'vacation', 'vacations', 'valley', 'value', 'values', 'van', 'vault', 'vendor', 'venture', 'ventures', 'venue', 'verse', 'vest', 'vet', 'via', 'vibe', 'vibes', 'vid', 'video', 'videos', 'vids', 'view', 'viewer', 'views', 'villa', 'village', 'ville', 'vine', 'vip', 'virtual', 'vision', 'visions', 'vista', 'visual', 'vita', 'vital', 'viva', 'vivid', 'voice', 'vote', 'vox', 'vue', 'walk', 'walker', 'wall', 'wallet', 'war', 'ware', 'warehouse', 'warrior', 'wash', 'watch', 'watcher', 'watches', 'water', 'wave', 'waves', 'way', 'ways', 'wealth', 'wear', 'weather', 'web', 'webdesign', 'webs', 'website', 'websites', 'wedding', 'week', 'weekly', 'well', 'wellness', 'werks', 'west', 'wheel', 'wheels', 'where', 'white', 'whiz', 'who', 'wholesale', 'wide', 'widget', 'wiki', 'wild', 'will', 'win', 'wind', 'window', 'windows', 'wine', 'wines', 'wing', 'wings', 'winner', 'wire', 'wired', 'wireless', 'wisdom', 'wise', 'wish', 'with', 'wiz', 'wizard', 'wizards', 'wolf', 'woman', 'women', 'wood', 'word', 'words', 'work', 'worker', 'works', 'workshop', 'world', 'worlds', 'worldwide', 'worth', 'worthy', 'worx', 'wow', 'wrap', 'write', 'writer', 'writers', 'writing', 'xchange', 'xpert', 'xpress', 'yard', 'yes', 'yoga', 'yourself', 'zen', 'zero', 'zilla', 'zip', 'zone', 'zones', 'zoo', 'zoom'],
-    'Animals': ['Alligator', 'Ant', 'Antelope', 'Ape', 'Armadillo', 'Baboon', 'Badger', 'Bat', 'Bear', 'Beaver', 'Bee', 'Beetle', 'Bison', 'Boar', 'Buffalo', 'Butterfly', 'Camel', 'Capybara', 'Caribou', 'Cat', 'Caterpillar', 'Chameleon', 'Cheetah', 'Chicken', 'Chimp', 'Chipmunk', 'Clam', 'Cobra', 'Cockroach', 'Cod', 'Coyote', 'Crab', 'Crane', 'Cricket', 'Crocodile', 'Crow', 'Deer', 'Dingo', 'Dino', 'Dog', 'Dolphin', 'Donkey', 'Dove', 'Dragonfly', 'Duck', 'Eagle', 'Eel', 'Elephant', 'Elk', 'Emu', 'Falcon', 'Finch', 'Firefly', 'Fish', 'Flamingo', 'Fly', 'Fox', 'Frog', 'Gazelle', 'Gecko', 'Gerbil', 'Gibbon', 'Giraffe', 'Gnat', 'Goat', 'Goldfish', 'Goose', 'Gopher', 'Gorilla', 'Grasshopper', 'Gull', 'Hamster', 'Hare', 'Hawk', 'Hedgehog', 'Hippo', 'Hornet', 'Horse', 'Hummingbird', 'Hyena', 'Iguana', 'Jaguar', 'Jay', 'Jellyfish', 'Kangaroo', 'Kingfisher', 'Koala', 'KomodoDragon', 'Ladybug', 'Leopard', 'Lion', 'Lizard', 'Llama', 'Lobster', 'Lynx', 'Macaw', 'Manatee', 'Manta', 'Monkey', 'Moose', 'Mosquito', 'Moth', 'Mouse', 'Mule', 'Octopus', 'Orca', 'Ostrich', 'Otter', 'Owl', 'Oyster', 'Panther', 'Parrot', 'Peacock', 'Pelican', 'Penguin', 'Pig', 'Pigeon', 'Pony', 'Porcupine', 'Puma', 'Rabbit', 'Raccoon', 'Ram', 'Rat', 'Raven', 'Reindeer', 'Rhino', 'Roadrunner', 'Robin', 'Salamander', 'Salmon', 'Scorpion', 'Seahorse', 'Seal', 'Shark', 'Sheep', 'Shrimp', 'Skunk', 'Snake', 'Sparrow', 'Spider', 'Squid', 'Squirrel', 'Starfish', 'Swan', 'Tiger', 'Toad', 'Tortoise', 'Toucan', 'Tuna', 'Turkey', 'Turtle', 'Viper', 'Vulture', 'Walrus', 'Wasp', 'Whale', 'Wolf', 'Wolverine', 'Woodpecker', 'Zebra']
+  'Animals': ['Alligator', 'Ant', 'Antelope', 'Ape', 'Armadillo', 'Baboon', 'Badger', 'Bat', 'Bear', 'Beaver', 'Bee', 'Beetle', 'Bison', 'Boar', 'Buffalo', 'Butterfly', 'Camel', 'Capybara', 'Caribou', 'Cat', 'Caterpillar', 'Chameleon', 'Cheetah', 'Chicken', 'Chimp', 'Chipmunk', 'Clam', 'Cobra', 'Cockroach', 'Cod', 'Coyote', 'Crab', 'Crane', 'Cricket', 'Crocodile', 'Crow', 'Deer', 'Dingo', 'Dino', 'Dog', 'Dolphin', 'Donkey', 'Dove', 'Dragonfly', 'Duck', 'Eagle', 'Eel', 'Elephant', 'Elk', 'Emu', 'Falcon', 'Finch', 'Firefly', 'Fish', 'Flamingo', 'Fly', 'Fox', 'Frog', 'Gazelle', 'Gecko', 'Gerbil', 'Gibbon', 'Giraffe', 'Gnat', 'Goat', 'Goldfish', 'Goose', 'Gopher', 'Gorilla', 'Grasshopper', 'Gull', 'Hamster', 'Hare', 'Hawk', 'Hedgehog', 'Hippo', 'Hornet', 'Horse', 'Hummingbird', 'Hyena', 'Iguana', 'Jaguar', 'Jay', 'Jellyfish', 'Kangaroo', 'Kingfisher', 'Koala', 'KomodoDragon', 'Ladybug', 'Leopard', 'Lion', 'Lizard', 'Llama', 'Lobster', 'Lynx', 'Macaw', 'Manatee', 'Manta', 'Monkey', 'Moose', 'Mosquito', 'Moth', 'Mouse', 'Mule', 'Octopus', 'Orca', 'Ostrich', 'Otter', 'Owl', 'Oyster', 'Panther', 'Parrot', 'Peacock', 'Pelican', 'Penguin', 'Pig', 'Pigeon', 'Pony', 'Porcupine', 'Puma', 'Rabbit', 'Raccoon', 'Ram', 'Rat', 'Raven', 'Reindeer', 'Rhino', 'Roadrunner', 'Robin', 'Salamander', 'Salmon', 'Scorpion', 'Seahorse', 'Seal', 'Shark', 'Sheep', 'Shrimp', 'Skunk', 'Snake', 'Sparrow', 'Spider', 'Squid', 'Squirrel', 'Starfish', 'Swan', 'Tiger', 'Toad', 'Tortoise', 'Toucan', 'Tuna', 'Turkey', 'Turtle', 'Viper', 'Vulture', 'Walrus', 'Wasp', 'Whale', 'Wolf', 'Wolverine', 'Woodpecker', 'Zebra']
 };
 
 const presetLists2 = {
@@ -69,6 +69,8 @@ export default function DomainSeekerPage() {
   const [openTldPopover, setOpenTldPopover] = useState(false);
   
   const searchCancelled = useRef(false);
+  const [isSearching, setIsSearching] = useState(false);
+
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -133,6 +135,7 @@ export default function DomainSeekerPage() {
       return;
     }
 
+    setIsSearching(true);
     setAvailableDomains([]);
     setUnavailableDomains([]);
     setProgress(0);
@@ -142,34 +145,35 @@ export default function DomainSeekerPage() {
 
     startTransition(async () => {
       try {
-        const stream = checkDomains(values);
-        let hasResults = false;
-        for await (const result of stream) {
-          if (searchCancelled.current) {
-            toast({ title: "Search cancelled." });
-            break;
-          }
-          hasResults = true;
-          if (result.status === "error") {
-            setError(result.domain);
-            toast({ variant: "destructive", title: "Error", description: result.domain });
-            break;
-          }
-          if (result.status === "available") {
-            setAvailableDomains((prev) => [result, ...prev]);
-          } else {
-            setUnavailableDomains((prev) => [result, ...prev]);
-          }
-          setProgress(result.progress);
+        const result: CheckDomainsResult = await checkDomains(values);
+
+        if (searchCancelled.current) {
+          toast({ title: "Search cancelled." });
+          setIsSearching(false);
+          return;
         }
-        if (hasResults && !searchCancelled.current) {
-          toast({ title: "Search complete!", description: "All domain checks have finished." });
+
+        if (result.error) {
+           setError(result.error);
+           toast({ variant: "destructive", title: "Error", description: result.error });
+        } else {
+            const available = result.results.filter(d => d.status === 'available');
+            const unavailable = result.results.filter(d => d.status !== 'available');
+            setAvailableDomains(available);
+            setUnavailableDomains(unavailable);
+            toast({ title: "Search complete!", description: `Found ${available.length} available domains.` });
         }
+        setProgress(result.progress);
+
       } catch (e) {
         if (!searchCancelled.current) {
           const errorMsg = e instanceof Error ? e.message : "An unknown error occurred.";
           setError(errorMsg);
           toast({ variant: "destructive", title: "An Error Occurred", description: errorMsg });
+        }
+      } finally {
+        if (!searchCancelled.current) {
+          setIsSearching(false);
         }
       }
     });
@@ -182,8 +186,6 @@ export default function DomainSeekerPage() {
         setTimeout(() => setCopiedDomain(null), 2000);
     });
   };
-
-  const isSearching = isPending || (progress > 0 && progress < 100);
 
   const TldSearchableDropdown = () => (
       <Popover open={openTldPopover} onOpenChange={setOpenTldPopover}>
@@ -224,6 +226,7 @@ export default function DomainSeekerPage() {
 
   const handleCancelSearch = () => {
     searchCancelled.current = true;
+    setIsSearching(false);
     setProgress(0);
   };
   
@@ -350,7 +353,7 @@ export default function DomainSeekerPage() {
               <div className="flex items-center gap-4">
                 <Button type="submit" size="lg" disabled={isSearching || totalChecks > MAX_DOMAINS || totalChecks === 0} className="w-full sm:w-auto btn-gradient">
                   {isSearching ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                  {isSearching ? `Checking... ${Math.round(progress)}%` : "Seek Domains"}
+                  {isSearching ? `Checking...` : "Seek Domains"}
                 </Button>
                 {isSearching && (
                   <Button type="button" size="lg" variant="outline" onClick={handleCancelSearch} className="w-full sm:w-auto">
@@ -369,15 +372,16 @@ export default function DomainSeekerPage() {
 
       {isSearching && (
         <div className="mt-12 px-2">
-          <Progress value={progress} className="w-full" />
+          <p className="text-sm text-center text-muted-foreground">Checking {totalChecks} domains. This may take a moment...</p>
         </div>
       )}
-
-      {(availableDomains.length > 0 || unavailableDomains.length > 0) && !isSearching && progress > 0 && (
+      
+      {!isSearching && progress === 100 && (
          <div className="text-center mt-12 animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
             <p className="text-muted-foreground">Search complete. Found {availableDomains.length} available domains.</p>
         </div>
       )}
+
 
       <div className="mt-12 grid md:grid-cols-2 gap-8 animate-fade-in-up" style={{ animationDelay: '0.5s' }}>
         <TiltCard glowColor="#EC4899">
@@ -451,5 +455,3 @@ export default function DomainSeekerPage() {
     </main>
   );
 }
-
-    

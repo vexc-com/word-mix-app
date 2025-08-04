@@ -11,6 +11,14 @@ export type DomainResult = {
   price?: number;
 };
 
+// This type will be the return type of our server action
+export type CheckDomainsResult = {
+  results: DomainResult[];
+  error?: string;
+  progress: number;
+}
+
+
 const formSchema = z.object({
   keywords1: z.string(),
   keywords2: z.string().optional(),
@@ -33,7 +41,9 @@ async function checkDomainApi(domain: string, apiKey: string): Promise<Omit<Doma
         return { status: "error" };
     }
 
-    if (data.SearchResponse.SearchResults?.[0]?.Available === "yes") {
+    const searchResult = data.SearchResponse.SearchResults?.[0];
+    if (searchResult?.Available === "yes") {
+        // Dynadot API doesn't provide price in search, so we set to 0 as a placeholder
         return { status: "available", price: 0 };
     } else {
         return { status: "unavailable" };
@@ -44,20 +54,18 @@ async function checkDomainApi(domain: string, apiKey: string): Promise<Omit<Doma
   }
 }
 
-export async function* checkDomains(
+export async function checkDomains(
   input: z.infer<typeof formSchema>
-): AsyncGenerator<DomainResult & { progress: number }, void, unknown> {
+): Promise<CheckDomainsResult> {
   const apiKey = process.env.DYNADOT_API_KEY;
 
   if (!apiKey || apiKey === 'your_dynadot_api_key_here') {
-    yield { domain: "API key not configured. Please add your Dynadot API key to the .env.local file.", status: "error", progress: 100 };
-    return;
+    return { results: [], error: "API key not configured. Please add your Dynadot API key to the .env.local file.", progress: 100 };
   }
 
   const validation = formSchema.safeParse(input);
   if (!validation.success) {
-    yield { domain: "Invalid input", status: "error", progress: 100 };
-    return;
+    return { results: [], error: "Invalid input.", progress: 100 };
   }
 
   const { keywords1, keywords2, tlds } = validation.data;
@@ -85,26 +93,26 @@ export async function* checkDomains(
   const domainsToCheck = combinations.flatMap(combo => tlds.map(tld => `${combo}${tld}`));
 
   if (domainsToCheck.length > MAX_DOMAINS) {
-    yield { domain: `Error: Job size exceeds the limit of ${MAX_DOMAINS} domains.`, status: "error", progress: 100 };
-    return;
+    return { results: [], error: `Error: Job size exceeds the limit of ${MAX_DOMAINS} domains.`, progress: 100 };
   }
   
   if (domainsToCheck.length === 0) {
-    yield { domain: "Error: No domains to check. Please provide some keywords.", status: "error", progress: 100 };
-    return;
+    return { results: [], error: "Error: No domains to check. Please provide some keywords.", progress: 100 };
   }
   
-  let checkedCount = 0;
-  for (const domain of domainsToCheck) {
+  const results: DomainResult[] = [];
+  // We can run checks in parallel to speed things up
+  const allChecks = domainsToCheck.map(async (domain) => {
     try {
       const result = await checkDomainApi(domain, apiKey);
-      checkedCount++;
-      const progress = (checkedCount / domainsToCheck.length) * 100;
-      yield { domain, ...result, progress };
+      return { domain, ...result };
     } catch (e) {
-      checkedCount++;
-      const progress = (checkedCount / domainsToCheck.length) * 100;
-      yield { domain, status: "error", progress };
+      return { domain, status: "error" as const };
     }
-  }
+  });
+
+  const settledResults = await Promise.all(allChecks);
+  results.push(...settledResults);
+  
+  return { results, progress: 100 };
 }
