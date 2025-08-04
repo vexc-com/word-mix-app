@@ -25,6 +25,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import TiltCard from "@/components/ui/tilt-card";
 
 const MAX_DOMAINS = 5000;
 
@@ -290,68 +291,73 @@ export default function DomainSeekerPage() {
       )}
 
       <div className="mt-12 grid md:grid-cols-2 gap-8 animate-fade-in-up" style={{ animationDelay: '0.5s' }}>
-        <Card className="shadow-lg bg-off-white border-gray-200/50">
-          <CardHeader>
-            <CardTitle className="text-primary flex items-center">
-              <div className="mr-2 flex h-5 w-5 items-center justify-center rounded-full bg-pink-500">
-                  <Check className="h-3 w-3 text-white" />
-              </div>
-              Available ({availableDomains.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {availableDomains.length > 0 ? (
-              <ul className="space-y-2">
-                {availableDomains.map((d) => (
-                  <li key={d.domain} className="flex justify-between items-center p-3 rounded-md hover:bg-secondary">
-                    <span className="font-medium text-indigo-600">{d.domain}</span>
-                    <div className="flex items-center gap-2">
-                        {d.price !== undefined && (
-                          <span className="text-sm text-foreground font-semibold">${d.price?.toFixed(2)}</span>
-                        )}
-                        <Button variant="ghost" size="icon" onClick={() => copyToClipboard(d.domain)}>
-                           {copiedDomain === d.domain ? <Check className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}
-                        </Button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-                <p className="text-sm text-muted-foreground text-center py-10">
-                    {isSearching ? "Searching for available domains..." : "No available domains found."}
-                </p>
-            )}
-          </CardContent>
-        </Card>
-        
-        <Card className="shadow-lg bg-off-white border-gray-200/50">
+        <TiltCard glowColor="#EC4899">
+          <Card className="shadow-lg bg-off-white border-gray-200/50 w-full h-full">
             <CardHeader>
-                <CardTitle className="flex items-center text-muted-foreground">
-                    <div className="mr-2 flex h-5 w-5 items-center justify-center rounded-full bg-gray-300">
-                        <X className="h-3 w-3 text-white" />
-                    </div>
-                    Unavailable ({unavailableDomains.length})
-                </CardTitle>
+              <CardTitle className="text-primary flex items-center">
+                <div className="mr-2 flex h-5 w-5 items-center justify-center rounded-full bg-pink-500">
+                    <Check className="h-3 w-3 text-white" />
+                </div>
+                Available ({availableDomains.length})
+              </CardTitle>
             </CardHeader>
             <CardContent>
-            {unavailableDomains.length > 0 ? (
-                 <ScrollArea className="h-96">
-                    <ul className="space-y-2 pr-4">
-                        {unavailableDomains.map((d) => (
-                        <li key={d.domain} className="flex justify-between items-center p-3 rounded-md">
-                            <span className="font-mono text-muted-foreground line-through">{d.domain}</span>
-                        </li>
-                        ))}
-                    </ul>
-                 </ScrollArea>
-                 ) : (
-                    <p className="text-sm text-muted-foreground text-center py-10">
-                        {isSearching ? "Checking domains..." : "No unavailable domains found."}
-                    </p>
-                )}
+              {availableDomains.length > 0 ? (
+                <ul className="space-y-2">
+                  {availableDomains.map((d) => (
+                    <li key={d.domain} className="flex justify-between items-center p-3 rounded-md hover:bg-secondary">
+                      <span className="font-medium text-indigo-600">{d.domain}</span>
+                      <div className="flex items-center gap-2">
+                          {d.price !== undefined && (
+                            <span className="text-sm text-foreground font-semibold">${d.price?.toFixed(2)}</span>
+                          )}
+                          <Button variant="ghost" size="icon" onClick={() => copyToClipboard(d.domain)}>
+                             {copiedDomain === d.domain ? <Check className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}
+                          </Button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                  <p className="text-sm text-muted-foreground text-center py-10">
+                      {isSearching ? "Searching for available domains..." : "No available domains found."}
+                  </p>
+              )}
             </CardContent>
-        </Card>
+          </Card>
+        </TiltCard>
+        
+        <TiltCard glowColor="#d1d5db">
+          <Card className="shadow-lg bg-off-white border-gray-200/50 w-full h-full">
+              <CardHeader>
+                  <CardTitle className="flex items-center text-muted-foreground">
+                      <div className="mr-2 flex h-5 w-5 items-center justify-center rounded-full bg-gray-300">
+                          <X className="h-3 w-3 text-white" />
+                      </div>
+                      Unavailable ({unavailableDomains.length})
+                  </CardTitle>
+              </CardHeader>
+              <CardContent>
+              {unavailableDomains.length > 0 ? (
+                   <ScrollArea className="h-96">
+                      <ul className="space-y-2 pr-4">
+                          {unavailableDomains.map((d) => (
+                          <li key={d.domain} className="flex justify-between items-center p-3 rounded-md">
+                              <span className="font-mono text-muted-foreground line-through">{d.domain}</span>
+                          </li>
+                          ))}
+                      </ul>
+                   </ScrollArea>
+                   ) : (
+                      <p className="text-sm text-muted-foreground text-center py-10">
+                          {isSearching ? "Checking domains..." : "No unavailable domains found."}
+                      </p>
+                  )}
+              </CardContent>
+          </Card>
+        </TiltCard>
       </div>
     </main>
   );
 }
+

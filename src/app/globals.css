@@ -124,4 +124,22 @@
   .gradient-border-focus:focus-within::before {
     background: linear-gradient(to right, #4F46E5, #EC4899);
   }
+
+  .tilt-card-container {
+    transform-style: preserve-3d;
+    position: relative;
+  }
+
+  .tilt-card-container:hover::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: 0.6rem; 
+    background: var(--glow-color, #9ca3af);
+    filter: blur(8px);
+    opacity: 0.75;
+    z-index: -1;
+    transition: opacity 0.3s ease;
+  }
 }
+
