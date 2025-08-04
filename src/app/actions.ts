@@ -21,9 +21,19 @@ async function checkDomainApi(domain: string, apiKey: string): Promise<Omit<Doma
   const url = `https://api.dynadot.com/api3.json?key=${apiKey}&command=search&domain=${domain}`;
   try {
     const response = await fetch(url);
+    if (!response.ok) {
+        console.error(`Error fetching from Dynadot API for ${domain}: ${response.statusText}`);
+        return { status: "error" };
+    }
+    
     const data = await response.json();
 
-    if (data.SearchResponse.SearchResults[0].Available === "yes") {
+    if (data.SearchResponse?.ResponseCode !== 0) {
+        console.error(`Dynadot API error for ${domain}:`, data.SearchResponse?.SearchHeader?.Status);
+        return { status: "error" };
+    }
+
+    if (data.SearchResponse.SearchResults?.[0]?.Available === "yes") {
         return { status: "available", price: 0 };
     } else {
         return { status: "unavailable" };
