@@ -2,15 +2,17 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Check, Copy, Loader2, Sparkles, X } from "lucide-react";
+import { Check, Copy, Loader2, Search, Sparkles, X } from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { checkDomains, type DomainResult } from "@/app/actions";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import {
   Form,
   FormControl,
@@ -20,16 +22,20 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/hooks/use-toast";
 import TiltCard from "@/components/ui/tilt-card";
+import { useToast } from "@/hooks/use-toast";
 
 const MAX_DOMAINS = 5000;
 
-const TLDs = ['.com', '.net', '.org', '.io', '.ai', '.co', '.dev', '.app', '.xyz', '.tech', '.store', '.online'];
+const primaryTlds = ['.com', '.net', '.org', '.io', '.ai', '.co'];
+const allTlds = ['.com', '.net', '.org', '.io', '.ai', '.co', '.dev', '.app', '.xyz', '.tech', '.store', '.online', '.info', '.biz', '.mobi', '.me', '.tv', '.ws', '.cc', '.ca', '.us', '.uk', '.de', '.jp', '.fr', '.au', '.ru', '.ch', '.it', '.nl', '.se', '.no', '.es', '.mil', '.edu', '.gov', '.int', '.arpa'];
+const secondaryTlds = allTlds.filter(tld => !primaryTlds.includes(tld));
+
 
 const formSchema = z.object({
   keywords1: z.string().min(1, { message: "Please provide at least one keyword." }),
@@ -61,15 +67,18 @@ export default function DomainSeekerPage() {
   const [totalChecks, setTotalChecks] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [copiedDomain, setCopiedDomain] = useState<string | null>(null);
+  const [openTldPopover, setOpenTldPopover] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       keywords1: "",
       keywords2: "",
-      tlds: [".com", ".net", ".io", ".ai"],
+      tlds: [".com"],
     },
   });
+  
+  const selectedTlds = form.watch('tlds');
 
   const handlePresetChange = (
     value: string,
@@ -168,6 +177,43 @@ export default function DomainSeekerPage() {
 
   const isSearching = isPending || (progress > 0 && progress < 100);
 
+  const TldSearchableDropdown = () => (
+      <Popover open={openTldPopover} onOpenChange={setOpenTldPopover}>
+          <PopoverTrigger asChild>
+              <Button variant="outline" role="combobox" aria-expanded={openTldPopover} className="w-[200px] justify-between">
+                  Search more TLDs...
+                  <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[200px] p-0">
+              <Command>
+                  <CommandInput placeholder="Search TLD..." />
+                  <CommandEmpty>No TLD found.</CommandEmpty>
+                  <CommandList>
+                      <CommandGroup>
+                          {secondaryTlds.map((tld) => (
+                              <CommandItem
+                                  key={tld}
+                                  value={tld}
+                                  onSelect={(currentValue) => {
+                                      const currentTlds = form.getValues("tlds") || [];
+                                      if (!currentTlds.includes(currentValue)) {
+                                          form.setValue("tlds", [...currentTlds, currentValue]);
+                                      }
+                                      setOpenTldPopover(false);
+                                  }}
+                              >
+                                  <Check className={`mr-2 h-4 w-4 ${selectedTlds.includes(tld) ? "opacity-100" : "opacity-0"}`} />
+                                  {tld}
+                              </CommandItem>
+                          ))}
+                      </CommandGroup>
+                  </CommandList>
+              </Command>
+          </PopoverContent>
+      </Popover>
+  );
+
   return (
     <main className="container mx-auto max-w-4xl px-4 py-16 md:py-24">
       <div className="text-center animate-fade-in-down">
@@ -242,34 +288,44 @@ export default function DomainSeekerPage() {
             <FormField
               control={form.control}
               name="tlds"
-              render={() => (
+              render={({ field }) => (
                 <FormItem>
                   <div className="mb-4">
                     <FormLabel>Top-Level Domains (TLDs)</FormLabel>
                     <FormDescription>Select which TLDs you want to check against.</FormDescription>
                   </div>
-                  <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-4">
-                    {TLDs.map((tld) => (
-                      <FormField
-                        key={tld}
-                        control={form.control}
-                        name="tlds"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                            <FormControl>
-                              <Checkbox
-                                checked={field.value?.includes(tld)}
-                                onCheckedChange={(checked) => {
-                                  return checked
-                                    ? field.onChange([...(field.value || []), tld])
-                                    : field.onChange(field.value?.filter((value) => value !== tld));
-                                }}
-                              />
-                            </FormControl>
-                            <FormLabel className="font-normal">{tld}</FormLabel>
+                  <div className="flex items-center gap-4 flex-wrap">
+                      {primaryTlds.map((tld) => (
+                          <FormItem key={tld} className="flex flex-row items-center space-x-2 space-y-0">
+                              <FormControl>
+                                  <Checkbox
+                                      checked={field.value?.includes(tld)}
+                                      onCheckedChange={(checked) => {
+                                          const newValue = checked
+                                              ? [...(field.value || []), tld]
+                                              : field.value?.filter((value) => value !== tld);
+                                          field.onChange(newValue);
+                                      }}
+                                  />
+                              </FormControl>
+                              <FormLabel className="font-normal">{tld}</FormLabel>
                           </FormItem>
-                        )}
-                      />
+                      ))}
+                      <TldSearchableDropdown />
+                  </div>
+                   <div className="mt-4 flex flex-wrap gap-2">
+                    {selectedTlds.filter(tld => !primaryTlds.includes(tld)).map(tld => (
+                      <Badge key={tld} variant="secondary" className="pl-2 pr-1">
+                        {tld}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-5 w-5 ml-1"
+                          onClick={() => field.onChange(field.value?.filter(v => v !== tld))}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </Badge>
                     ))}
                   </div>
                   <FormMessage />
