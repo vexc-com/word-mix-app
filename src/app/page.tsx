@@ -183,9 +183,11 @@ export default function DomainSeekerPage() {
                     <div className="flex justify-between items-center mb-2">
                         <FormLabel>Keyword List 1</FormLabel>
                         <Select onValueChange={(value) => handlePresetChange(value, 'list1', field.onChange)}>
-                            <SelectTrigger className="w-[180px] h-9">
-                                <SelectValue placeholder="Load a preset..." />
-                            </SelectTrigger>
+                            <div className="relative group gradient-border-focus rounded-md">
+                                <SelectTrigger className="w-[180px] h-9 border-2 border-transparent focus:border-transparent">
+                                    <SelectValue placeholder="Load a preset..." />
+                                </SelectTrigger>
+                            </div>
                             <SelectContent>
                                 {Object.keys(presetLists1).map(name => (
                                     <SelectItem key={name} value={name}>{name}</SelectItem>
@@ -208,9 +210,11 @@ export default function DomainSeekerPage() {
                      <div className="flex justify-between items-center mb-2">
                         <FormLabel>Keyword List 2 (optional)</FormLabel>
                         <Select onValueChange={(value) => handlePresetChange(value, 'list2', field.onChange)}>
-                            <SelectTrigger className="w-[180px] h-9">
-                                <SelectValue placeholder="Load a preset..." />
-                            </SelectTrigger>
+                           <div className="relative group gradient-border-focus rounded-md">
+                                <SelectTrigger className="w-[180px] h-9 border-2 border-transparent focus:border-transparent">
+                                    <SelectValue placeholder="Load a preset..." />
+                                </SelectTrigger>
+                            </div>
                             <SelectContent>
                                 {Object.keys(presetLists2).map(name => (
                                     <SelectItem key={name} value={name}>{name}</SelectItem>
@@ -303,21 +307,23 @@ export default function DomainSeekerPage() {
             </CardHeader>
             <CardContent>
               {availableDomains.length > 0 ? (
-                <ul className="space-y-2">
-                  {availableDomains.map((d) => (
-                    <li key={d.domain} className="flex justify-between items-center p-3 rounded-md hover:bg-secondary">
-                      <span className="font-medium text-indigo-600">{d.domain}</span>
-                      <div className="flex items-center gap-2">
-                          {d.price !== undefined && (
-                            <span className="text-sm text-foreground font-semibold">${d.price?.toFixed(2)}</span>
-                          )}
-                          <Button variant="ghost" size="icon" onClick={() => copyToClipboard(d.domain)}>
-                             {copiedDomain === d.domain ? <Check className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}
-                          </Button>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
+                 <ScrollArea className="h-96">
+                    <ul className="space-y-2 pr-4">
+                      {availableDomains.map((d) => (
+                        <li key={d.domain} className="flex justify-between items-center p-3 rounded-md hover:bg-secondary">
+                          <span className="font-medium text-indigo-600">{d.domain}</span>
+                          <div className="flex items-center gap-2">
+                              {d.price !== undefined && (
+                                <span className="text-sm text-foreground font-semibold">${d.price?.toFixed(2)}</span>
+                              )}
+                              <Button variant="ghost" size="icon" onClick={() => copyToClipboard(d.domain)}>
+                                 {copiedDomain === d.domain ? <Check className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}
+                              </Button>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                </ScrollArea>
               ) : (
                   <p className="text-sm text-muted-foreground text-center py-10">
                       {isSearching ? "Searching for available domains..." : "No available domains found."}
@@ -360,4 +366,3 @@ export default function DomainSeekerPage() {
     </main>
   );
 }
-
