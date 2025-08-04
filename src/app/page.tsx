@@ -162,7 +162,7 @@ export default function DomainSeekerPage() {
   return (
     <main className="container mx-auto max-w-4xl px-4 py-16 md:py-24">
       <div className="text-center animate-fade-in-down">
-        <h1 className="text-4xl font-extrabold tracking-tight md:text-5xl lg:text-6xl">
+        <h1 className="text-4xl font-extrabold tracking-tight md:text-5xl lg:text-6xl bg-gradient-to-r from-indigo-600 to-pink-500 text-transparent bg-clip-text">
           Domain Seeker
         </h1>
         <p className="mt-6 max-w-2xl mx-auto text-lg text-muted-foreground">
