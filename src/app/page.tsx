@@ -247,7 +247,10 @@ export default function DomainSeekerPage() {
         <Card className="shadow-lg bg-off-white border-gray-200/50">
           <CardHeader>
             <CardTitle className="text-primary flex items-center">
-              <Check className="mr-2 text-pink-500"/> Available ({availableDomains.length})
+              <div className="mr-2 flex h-5 w-5 items-center justify-center rounded-full bg-pink-500">
+                  <Check className="h-3 w-3 text-white" />
+              </div>
+              Available ({availableDomains.length})
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -278,7 +281,9 @@ export default function DomainSeekerPage() {
         <Card className="shadow-lg bg-off-white border-gray-200/50">
             <CardHeader>
                 <CardTitle className="flex items-center text-muted-foreground">
-                    <X className="mr-2 text-red-500" />
+                    <div className="mr-2 flex h-5 w-5 items-center justify-center rounded-full bg-gray-300">
+                        <X className="h-3 w-3 text-white" />
+                    </div>
                     Unavailable ({unavailableDomains.length})
                 </CardTitle>
             </CardHeader>
@@ -304,5 +309,3 @@ export default function DomainSeekerPage() {
     </main>
   );
 }
-
-    

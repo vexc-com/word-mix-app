@@ -62,7 +62,7 @@ const config = {
         },
         'off-white': '#F9FAFB',
         indigo: {
-          '500': '#4F46E5',
+          '600': '#4F46E5',
         },
         pink: {
           '500': '#EC4899',
