@@ -16,24 +16,33 @@ const formSchema = z.object({
   tlds: z.array(z.string()).min(1, { message: "Please select at least one TLD." }),
 });
 
-// This is a mock function that simulates calling an API like Dynadot.
-async function checkDomainApi(domain: string): Promise<Omit<DomainResult, 'domain'>> {
-  // Simulate network latency
-  await new Promise((resolve) => setTimeout(resolve, Math.random() * 100 + 50));
-  
-  // Simulate API response
-  const isAvailable = Math.random() > 0.6; // ~40% available
-  if (isAvailable) {
-    const price = parseFloat((Math.random() * (49.99 - 9.99) + 9.99).toFixed(2));
-    return { status: "available", price };
-  } else {
-    return { status: "unavailable" };
+async function checkDomainApi(domain: string, apiKey: string): Promise<Omit<DomainResult, 'domain'>> {
+  const url = `https://api.dynadot.com/api3.json?key=${apiKey}&command=search&domain=${domain}`;
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+
+    if (data.SearchResponse.SearchResults[0].Available === "yes") {
+        return { status: "available", price: 0 };
+    } else {
+        return { status: "unavailable" };
+    }
+  } catch (error) {
+    console.error(`Error checking domain ${domain}:`, error);
+    return { status: "error" };
   }
 }
 
 export async function* checkDomains(
   input: z.infer<typeof formSchema>
 ): AsyncGenerator<DomainResult & { progress: number }, void, unknown> {
+  const apiKey = process.env.DYNADOT_API_KEY;
+
+  if (!apiKey || apiKey === 'your_dynadot_api_key_here') {
+    yield { domain: "API key not configured. Please add your Dynadot API key to the .env.local file.", status: "error", progress: 100 };
+    return;
+  }
+
   const validation = formSchema.safeParse(input);
   if (!validation.success) {
     yield { domain: "Invalid input", status: "error", progress: 100 };
@@ -73,7 +82,7 @@ export async function* checkDomains(
   let checkedCount = 0;
   for (const domain of domainsToCheck) {
     try {
-      const result = await checkDomainApi(domain);
+      const result = await checkDomainApi(domain, apiKey);
       checkedCount++;
       const progress = (checkedCount / domainsToCheck.length) * 100;
       yield { domain, ...result, progress };
