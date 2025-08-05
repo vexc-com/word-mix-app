@@ -32,7 +32,7 @@ export async function checkDomains(
   const apiKey = process.env.DYNADOT_KEY;
 
   if (!apiKey || apiKey === 'your_dynadot_api_key_here') {
-    return { results: [], error: "API key not configured. Please add your Dynadot API key to the .env.local file.", progress: 100 };
+    return { results: [], error: "API key not configured. Please add your Dynadot API key to the .env.local file and restart the server.", progress: 100 };
   }
 
   const validation = formSchema.safeParse(input);
@@ -89,11 +89,11 @@ export async function checkDomains(
     });
 
     const xmlText = await response.text();
+    console.log('Full Dynadot API response:', xmlText); // Log raw XML response
+
     const parser = new XMLParser();
     const data = parser.parse(xmlText);
 
-    console.log('Full Dynadot API response:', data);
-    
     const dynadotResponse = data.SearchResponse;
 
     if (dynadotResponse?.ResponseHeader?.SuccessCode !== 0) {
