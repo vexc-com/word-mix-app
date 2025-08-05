@@ -147,7 +147,9 @@ export default function DomainSeekerPage() {
 
     startTransition(async () => {
       try {
+        console.log("Calling checkDomains with values:", values);
         const result: CheckDomainsResult = await checkDomains(values);
+        console.log("Received result from checkDomains:", result);
 
         if (searchCancelled.current) {
           toast({ title: "Search cancelled." });
@@ -159,13 +161,13 @@ export default function DomainSeekerPage() {
            setError(result.error);
            toast({ variant: "destructive", title: "Error", description: result.error });
         } else {
-            const available = result.results.filter(d => d.status === 'available');
-            const unavailable = result.results.filter(d => d.status !== 'available');
+            const available = (result.results ?? []).filter(d => d.status === 'available');
+            const unavailable = (result.results ?? []).filter(d => d.status !== 'available');
             setAvailableDomains(available);
             setUnavailableDomains(unavailable);
             toast({ title: "Search complete!", description: `Found ${available.length} available domains.` });
+            setProgress(100);
         }
-        setProgress(result.progress);
 
       } catch (e) {
         if (!searchCancelled.current) {
@@ -332,7 +334,7 @@ export default function DomainSeekerPage() {
                       <TldSearchableDropdown />
                   </div>
                    <div className="mt-4 flex flex-wrap gap-2">
-                    {selectedTlds.filter(tld => !primaryTlds.includes(tld)).map(tld => (
+                    {(selectedTlds ?? []).filter(tld => !primaryTlds.includes(tld)).map(tld => (
                       <Badge key={tld} variant="secondary" className="pl-2 pr-1">
                         {tld}
                         <Button
@@ -372,7 +374,7 @@ export default function DomainSeekerPage() {
         </Form>
       </div>
 
-      {isSearching && (
+      {isSearching && progress < 100 && (
         <div className="mt-12 px-2">
           <p className="text-sm text-center text-muted-foreground">Checking {totalChecks} domains. This may take a moment...</p>
         </div>
