@@ -54,12 +54,12 @@ async function checkDomainApi(domains: string[]): Promise<CheckDomainsResult> {
     
     console.log('Full Dynadot API response:', JSON.stringify(parsedResult, null, 2));
 
-    const searchResponses = parsedResult?.DynadotAPIResponse?.SearchResponse;
+    const searchResponses = parsedResult?.DynadotAPIResponse?.SearchResponse?.Search;
     const header = parsedResult?.DynadotAPIResponse?.ResponseHeader;
 
-    if (header?.SuccessCode !== 0) {
+    if (header?.ResponseCode !== 0) {
       const errorMessage = header?.Error || 'Unknown API error from Dynadot.';
-      console.error('Dynadot API Error:', errorMessage);
+      console.error('Dynadot API Error:', errorMessage, 'Full Response:', xmlText);
       return { results: [], error: `Dynadot API Error: ${errorMessage}` };
     }
     
@@ -75,10 +75,10 @@ async function checkDomainApi(domains: string[]): Promise<CheckDomainsResult> {
       if (!domainInfo) {
         return { domain: 'unknown', status: 'error' };
       }
-      const isAvailable = domainInfo.Available === 'yes';
-      const price = parseFloat(domainInfo.Price);
+      const isAvailable = domainInfo['@_Available'] === 'yes';
+      const price = parseFloat(domainInfo['@_Price']);
       return {
-        domain: domainInfo.DomainName,
+        domain: domainInfo['@_DomainName'],
         status: isAvailable ? 'available' : 'unavailable',
         price: isNaN(price) ? undefined : price,
       };
@@ -125,5 +125,7 @@ export async function checkDomains(values: { keywords1: string; keywords2?: stri
     return { results: [] };
   }
   
-  return await checkDomainApi(domainsToCheck);
+  const result = await checkDomainApi(domainsToCheck);
+  console.log("Result from checkDomainApi before returning to client:", JSON.stringify(result, null, 2));
+  return result;
 }
