@@ -71,6 +71,13 @@ export async function checkDomains(
   if (domainsToCheck.length === 0) {
     return { results: [], error: "Error: No domains to check. Please provide some keywords.", progress: 100 };
   }
+
+  try {
+    await fetch('https://www.google.com');
+    console.log('Successfully fetched Google');
+  } catch (e) {
+    console.error('Failed to fetch Google:', e);
+  }
   
   try {
     const params = new URLSearchParams();
