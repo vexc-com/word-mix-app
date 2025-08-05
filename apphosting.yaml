@@ -6,5 +6,5 @@ runConfig:
   # more instances in response to increased traffic.
   maxInstances: 1
 secretEnvironmentVariables:
-  - key: dynadot_key
+  - key: DYNADOT_KEY
     secret: DYNADOT_API_KEY

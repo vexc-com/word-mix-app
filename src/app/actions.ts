@@ -16,12 +16,12 @@ export interface CheckDomainsResult {
 }
 
 async function checkDomainApi(domains: string[]): Promise<CheckDomainsResult> {
-  const dynadotApiKey = process.env.dynadot_key;
+  const dynadotApiKey = process.env.DYNADOT_KEY;
 
   console.log("DYNADOT_KEY Status (deployed):", dynadotApiKey ? "SET" : "NOT SET");
 
   if (!dynadotApiKey) {
-    console.error("dynadot_key environment variable is not set.");
+    console.error("DYNADOT_KEY environment variable is not set.");
     return { 
       results: [],
       error: "API key not configured. Please contact support." 
