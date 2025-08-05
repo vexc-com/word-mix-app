@@ -3,7 +3,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
-  title: 'Domain Seeker',
+  title: 'Word Mix',
   description: 'Find available domains with keyword combinations.',
 };
 
