@@ -8,3 +8,4 @@ runConfig:
 secretEnvironmentVariables:
   - key: DYNADOT_KEY
     secret: DYNADOT_KEY
+    version: latest
