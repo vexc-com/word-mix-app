@@ -17,18 +17,15 @@ export interface CheckDomainsResult {
 async function checkDomainApi(domains: string[]): Promise<CheckDomainsResult> {
   console.log("=== DOMAIN CHECK START ===");
   console.log("Input domains:", domains);
-  
+
   const dynadotApiKey = process.env.DYNADOT_KEY;
-  
+
   console.log("DYNADOT_KEY Status (deployed):", dynadotApiKey ? "SET" : "NOT SET");
   console.log("API Key length:", dynadotApiKey ? dynadotApiKey.length : 0);
 
   if (!dynadotApiKey) {
     console.error("DYNADOT_KEY environment variable is not set.");
-    return { 
-      results: [],
-      error: "API key not configured. Please contact support." 
-    };
+    return { results: [], error: "API key not configured. Please contact support." };
   }
 
   const params = new URLSearchParams();
@@ -45,60 +42,78 @@ async function checkDomainApi(domains: string[]): Promise<CheckDomainsResult> {
     const xmlText = await response.text();
 
     if (!response.ok) {
-        console.error(`Dynadot API HTTP Error: ${response.status}`, xmlText);
-        return { 
-            results: [],
-            error: `API returned an error: ${response.status}. See server logs for details.` 
-        };
-    }
-
-    const parser = new XMLParser({ ignoreAttributes: false });
-    const parsedResult = parser.parse(xmlText);
-    
-    console.log('Full Dynadot API response:', JSON.stringify(parsedResult, null, 2));
-
-    const searchResponses = parsedResult?.DynadotAPIResponse?.SearchResponse?.Search;
-    const header = parsedResult?.DynadotAPIResponse?.ResponseHeader;
-
-    if (header?.ResponseCode !== 0) {
-      const errorMessage = header?.Error || 'Unknown API error from Dynadot.';
-      console.error('Dynadot API Error:', errorMessage, 'Full Response:', xmlText);
-      return { results: [], error: `Dynadot API Error: ${errorMessage}` };
-    }
-    
-    if (!searchResponses) {
-        return { results: [], error: 'Unexpected API response format.' };
-    }
-    
-    // Ensure searchResponses is an array
-    const responsesArray = Array.isArray(searchResponses) ? searchResponses : [searchResponses];
-
-    const results: DomainResult[] = responsesArray.map((res: any) => {
-      const domainInfo = res?.DomainInfo;
-      if (!domainInfo) {
-        return { domain: 'unknown', status: 'error' };
-      }
-      const isAvailable = domainInfo['@_Available'] === 'yes';
-      const price = parseFloat(domainInfo['@_Price']);
+      console.error(`Dynadot API HTTP Error: ${response.status}`, xmlText);
       return {
-        domain: domainInfo['@_DomainName'],
-        status: isAvailable ? 'available' : 'unavailable',
-        price: isNaN(price) ? undefined : price,
+        results: [],
+        error: `API returned an error: ${response.status}. See server logs for details.`
       };
+    }
+
+    // Parse Dynadot API v3 XML
+    const parser = new XMLParser({
+      ignoreAttributes: false,
+      attributeNamePrefix: '', // we want plain keys like SuccessCode, DomainName, etc.
+      trimValues: true
     });
+    const parsed = parser.parse(xmlText);
+
+    console.log('Full Dynadot API response:', JSON.stringify(parsed, null, 2));
+
+    // Shape seen in logs:
+    // <Results>
+    //   <SearchResponse>
+    //     <SearchHeader>
+    //       <SuccessCode>0</SuccessCode>
+    //       <DomainName>example.com</DomainName>
+    //       <Status>success</Status>
+    //       <Available>yes</Available>
+    //       <Price>...</Price> (optional)
+    //     </SearchHeader>
+    //   </SearchResponse>
+    //   ...
+    // </Results>
+    const sr = parsed?.Results?.SearchResponse;
+    const items: any[] = Array.isArray(sr) ? sr : sr ? [sr] : [];
+
+    if (items.length === 0) {
+      return { results: [], error: 'Unexpected API response format from Dynadot.' };
+    }
+
+    const results: DomainResult[] = [];
+
+    for (const entry of items) {
+      const h = entry?.SearchHeader || entry;
+
+      // Some safety: map alternative locations if Dynadot changes minor naming
+      const successCode = Number(h?.SuccessCode ?? h?.ResponseCode ?? 0);
+
+      if (Number.isFinite(successCode) && successCode !== 0) {
+        const errMsg = h?.Error || h?.ResponseDescription || 'Unknown Dynadot error';
+        console.error('Dynadot API Error:', errMsg, 'Full Response:', xmlText);
+        return { results: [], error: `Dynadot API Error: ${errMsg}` };
+      }
+
+      const domainName: string | undefined = h?.DomainName;
+      const availableText = String(h?.Available ?? '').toLowerCase();
+      const isAvailable = availableText === 'yes' || availableText === 'true';
+      const priceNum = h?.Price != null ? Number(h.Price) : undefined;
+
+      if (domainName) {
+        results.push({
+          domain: domainName,
+          status: isAvailable ? 'available' : 'unavailable',
+          price: Number.isFinite(priceNum) ? priceNum : undefined,
+        });
+      } else {
+        results.push({ domain: 'unknown', status: 'error' });
+      }
+    }
 
     return { results };
-
   } catch (error) {
     console.error("[checkDomainApi] An unexpected error occurred:", error);
-    let errorMessage = "An unknown API error occurred. Please try again.";
-    if (error instanceof Error) {
-      errorMessage = `API Error: ${error.message}`;
-    }
-    return { 
-      results: [],
-      error: errorMessage 
-    };
+    const errorMessage = error instanceof Error ? `API Error: ${error.message}` : "An unknown API error occurred. Please try again.";
+    return { results: [], error: errorMessage };
   }
 }
 
@@ -127,8 +142,9 @@ export async function checkDomains(values: { keywords1: string; keywords2?: stri
   if (domainsToCheck.length === 0) {
     return { results: [] };
   }
-  
+
   const result = await checkDomainApi(domainsToCheck);
   console.log("Result from checkDomainApi before returning to client:", JSON.stringify(result, null, 2));
   return result;
-}// Force restart Wed Aug  6 03:46:51 PM UTC 2025
+}
+// Force restart Wed Aug  6 03:46:51 PM UTC 2025
