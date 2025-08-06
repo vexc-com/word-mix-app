@@ -131,4 +131,4 @@ export async function checkDomains(values: { keywords1: string; keywords2?: stri
   const result = await checkDomainApi(domainsToCheck);
   console.log("Result from checkDomainApi before returning to client:", JSON.stringify(result, null, 2));
   return result;
-}
+}// Force restart Wed Aug  6 03:46:51 PM UTC 2025
