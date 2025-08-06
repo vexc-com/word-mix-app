@@ -1,4 +1,3 @@
-
 // src/app/actions.ts
 'use server'; // Essential for Next.js/React Server Components actions
 
@@ -16,9 +15,13 @@ export interface CheckDomainsResult {
 }
 
 async function checkDomainApi(domains: string[]): Promise<CheckDomainsResult> {
+  console.log("=== DOMAIN CHECK START ===");
+  console.log("Input domains:", domains);
+  
   const dynadotApiKey = process.env.DYNADOT_KEY;
-
+  
   console.log("DYNADOT_KEY Status (deployed):", dynadotApiKey ? "SET" : "NOT SET");
+  console.log("API Key length:", dynadotApiKey ? dynadotApiKey.length : 0);
 
   if (!dynadotApiKey) {
     console.error("DYNADOT_KEY environment variable is not set.");
