@@ -7,4 +7,4 @@ runConfig:
   maxInstances: 1
 secretEnvironmentVariables:
   - key: DYNADOT_KEY
-    secret: DYNADOT_API_KEY
+    secret: DYNADOT_KEY
