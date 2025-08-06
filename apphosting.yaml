@@ -2,10 +2,8 @@
 # https://firebase.google.com/docs/app-hosting/configure
 
 runConfig:
-  # Increase this value if you'd like to automatically spin up
-  # more instances in response to increased traffic.
   maxInstances: 1
-secretEnvironmentVariables:
-  - key: DYNADOT_KEY
-    secret: DYNADOT_KEY
-    version: latest
+  secretEnvironmentVariables:   # <-- MUST be indented under runConfig
+    - key: DYNADOT_KEY
+      secret: DYNADOT_KEY
+      version: latest
