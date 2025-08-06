@@ -3,7 +3,10 @@
 
 runConfig:
   maxInstances: 1
-  secretEnvironmentVariables:   # <-- MUST be indented under runConfig
-    - key: DYNADOT_KEY
-      secret: DYNADOT_KEY
-      version: latest
+
+env:
+  - variable: DYNADOT_KEY
+    secret: DYNADOT_KEY        # or DYNADOT_KEY@1 to pin to version 1
+    availability:
+      - RUNTIME                # optional; limits to runtime
+
