@@ -1,15 +1,10 @@
 import React, { useState } from "react";
-import { Checkbox } from "@/components/ui/checkbox";   // shadcn/ui
+import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
-
-export interface DomainResult {
-  name: string;
-  tld: string;
-  length: number;
-}
+import type { DomainResult } from "@/app/actions";   // ← shared type
 
 interface Props {
-  results: DomainResult[];          // list of *available* domains
+  results: DomainResult[];                     // list of *available* domains
   onSelectionChange?: (selected: Set<string>) => void;
 }
 
@@ -35,19 +30,22 @@ const ResultsTable: React.FC<Props> = ({ results, onSelectionChange }) => {
           </tr>
         </thead>
         <tbody>
-          {results.map((d) => (
-            <tr key={d.name} className="border-t hover:bg-muted/40">
-              <td className="p-2">
-                <Checkbox
-                  checked={selected.has(d.name)}
-                  onCheckedChange={() => toggle(d.name)}
-                />
-              </td>
-              <td className="px-3 py-2 font-mono">{d.name}</td>
-              <td className="px-3 py-2">{d.tld}</td>
-              <td className="px-3 py-2">{d.length}</td>
-            </tr>
-          ))}
+          {results.map((d) => {
+            const [namePart, tldPart = ""] = d.domain.split(".");
+            return (
+              <tr key={d.domain} className="border-t hover:bg-muted/40">
+                <td className="p-2">
+                  <Checkbox
+                    checked={selected.has(d.domain)}
+                    onCheckedChange={() => toggle(d.domain)}
+                  />
+                </td>
+                <td className="px-3 py-2 font-mono">{namePart}</td>
+                <td className="px-3 py-2">.{tldPart}</td>
+                <td className="px-3 py-2">{namePart.length}</td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </ScrollArea>
