@@ -65,6 +65,9 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import TiltCard from "@/components/ui/tilt-card";
 import { useToast } from "@/hooks/use-toast";
+import ResultsTable from "@/components/ui/ResultsTable";
+
+
 
 /* ───────────────────────────────────────── */
 
@@ -144,6 +147,8 @@ export default function DomainSeekerPage() {
   const [openTldPopover, setOpenTldPopover] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const searchCancelled = useRef(false);
+  const [selectedDomains, setSelectedDomains] = useState<Set<string>>(new Set());
+
 
   // refs to track counts
   const availableCountRef = useRef(0);
@@ -315,39 +320,39 @@ export default function DomainSeekerPage() {
     });
   };
 
- /* export available → CSV (now with header) */
-const exportToCsv = () => {
-  if (!availableDomains.length) {
-    toast({
-      variant: "destructive",
-      title: "No available domains",
-      description: "Run a search first, then export.",
+  /* export available → CSV (now with header) */
+  const exportToCsv = () => {
+    if (!availableDomains.length) {
+      toast({
+        variant: "destructive",
+        title: "No available domains",
+        description: "Run a search first, then export.",
+      });
+      return;
+    }
+
+    // prepend header
+    const csvText = ["Domain", ...availableDomains.map((d) => d.domain)].join("\n");
+
+    // encode UTF-8, normalize line endings
+    const blob = new Blob([csvText.replace(/\n/g, "\r\n")], {
+      type: "text/csv;charset=utf-8;",
     });
-    return;
-  }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const stamp = new Date().toISOString().slice(0, 10);
 
-  // prepend header
-  const csvText = ["Domain", ...availableDomains.map((d) => d.domain)].join("\n");
+    a.href = url;
+    a.download = `wordmix-available-${stamp}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
 
-  // encode UTF-8, normalize line endings
-  const blob = new Blob([csvText.replace(/\n/g, "\r\n")], {
-    type: "text/csv;charset=utf-8;",
-  });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  const stamp = new Date().toISOString().slice(0, 10);
-
-  a.href = url;
-  a.download = `wordmix-available-${stamp}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-
-  toast({
-    title: "CSV exported",
-    description: `${availableDomains.length} domains saved with header row.`,
-  });
-};
+    toast({
+      title: "CSV exported",
+      description: `${availableDomains.length} domains saved with header row.`,
+    });
+  };
 
 
   const handleCancelSearch = () => {
@@ -525,11 +530,10 @@ const exportToCsv = () => {
                                   }}
                                 >
                                   <Check
-                                    className={`mr-2 h-4 w-4 ${
-                                      selectedTlds.includes(tld)
+                                    className={`mr-2 h-4 w-4 ${selectedTlds.includes(tld)
                                         ? "opacity-100"
                                         : "opacity-0"
-                                    }`}
+                                      }`}
                                   />
                                   {tld}
                                 </CommandItem>
@@ -603,11 +607,10 @@ const exportToCsv = () => {
                 )}
               </div>
               <div
-                className={`text-sm ${
-                  totalChecks > MAX_DOMAINS
+                className={`text-sm ${totalChecks > MAX_DOMAINS
                     ? "text-red-500"
                     : "text-muted-foreground"
-                }`}
+                  }`}
               >
                 {totalChecks} / {MAX_DOMAINS} domains
               </div>
@@ -665,41 +668,12 @@ const exportToCsv = () => {
                 CSV
               </Button>
             </CardHeader>
-
             <CardContent>
               {availableDomains.length ? (
-                <ScrollArea className="h-96">
-                  <ul className="space-y-2 pr-4">
-                    {availableDomains.map((d) => (
-                      <li
-                        key={d.domain}
-                        className="flex justify-between items-center p-3 rounded-md hover:bg-secondary"
-                      >
-                        <span className="font-medium text-indigo-600">
-                          {d.domain}
-                        </span>
-                        <div className="flex items-center gap-2">
-                          {d.price !== undefined && (
-                            <span className="text-sm text-foreground font-semibold">
-                              ${d.price?.toFixed(2)}
-                            </span>
-                          )}
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => copyToClipboard(d.domain)}
-                          >
-                            {copiedDomain === d.domain ? (
-                              <Check className="h-4 w-4 text-primary" />
-                            ) : (
-                              <Copy className="h-4 w-4" />
-                            )}
-                          </Button>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                </ScrollArea>
+                <ResultsTable
+                  results={availableDomains}
+                  onSelectionChange={setSelectedDomains}
+                />
               ) : (
                 <p className="text-sm text-muted-foreground text-center py-10">
                   {isSearching
@@ -708,6 +682,7 @@ const exportToCsv = () => {
                 </p>
               )}
             </CardContent>
+
           </Card>
         </TiltCard>
 
