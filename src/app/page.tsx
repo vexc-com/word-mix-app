@@ -1,6 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+
 import {
   Check,
   Copy,
@@ -9,7 +10,17 @@ import {
   Search,
   Sparkles,
   X,
+  MoreHorizontal,
+  Trash2,
 } from "lucide-react";
+
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
+
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
