@@ -304,33 +304,40 @@ export default function DomainSeekerPage() {
     });
   };
 
-  const exportToCsv = () => {
-    if (!availableDomains.length) {
-      toast({
-        variant: "destructive",
-        title: "No available domains",
-        description: "Run a search first to generate a CSV.",
-      });
-      return;
-    }
-
-    const csv = availableDomains.map((d) => d.domain).join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    const stamp = new Date().toISOString().slice(0, 10);
-
-    a.href = url;
-    a.download = `wordmix-available-${stamp}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-
+ /* export available → CSV (now with header) */
+const exportToCsv = () => {
+  if (!availableDomains.length) {
     toast({
-      title: "CSV exported",
-      description: `${availableDomains.length} domains saved to file.`,
+      variant: "destructive",
+      title: "No available domains",
+      description: "Run a search first, then export.",
     });
-  };
+    return;
+  }
+
+  // prepend header
+  const csvText = ["Domain", ...availableDomains.map((d) => d.domain)].join("\n");
+
+  // encode UTF-8, normalize line endings
+  const blob = new Blob([csvText.replace(/\n/g, "\r\n")], {
+    type: "text/csv;charset=utf-8;",
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const stamp = new Date().toISOString().slice(0, 10);
+
+  a.href = url;
+  a.download = `wordmix-available-${stamp}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+
+  toast({
+    title: "CSV exported",
+    description: `${availableDomains.length} domains saved with header row.`,
+  });
+};
+
 
   const handleCancelSearch = () => {
     searchCancelled.current = true;
