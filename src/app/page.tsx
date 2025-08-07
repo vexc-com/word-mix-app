@@ -69,17 +69,20 @@ export default function DomainSeekerPage() {
   const [isPending, startTransition] = useTransition();
 
   /* state */
-  const [availableDomains, setAvailableDomains] = useState<DomainResult[]>([]);
+  const [availableDomains, setAvailableDomains]     = useState<DomainResult[]>([]);
   const [unavailableDomains, setUnavailableDomains] = useState<DomainResult[]>([]);
-  const [errors, setErrors] = useState<{ domain: string; error?: string }[]>([]);
-  const [progress, setProgress] = useState(0);
-  const [totalChecks, setTotalChecks] = useState(0);
-  const [error, setError] = useState<string | null>(null);
-  const [copiedDomain, setCopiedDomain] = useState<string | null>(null);
-  const [openTldPopover, setOpenTldPopover] = useState(false);
-  const [isSearching, setIsSearching] = useState(false);
-
+  const [errors, setErrors]                         = useState<{ domain: string; error?: string }[]>([]);
+  const [progress, setProgress]                     = useState(0);
+  const [totalChecks, setTotalChecks]               = useState(0);
+  const [error, setError]                           = useState<string | null>(null);
+  const [copiedDomain, setCopiedDomain]             = useState<string | null>(null);
+  const [openTldPopover, setOpenTldPopover]         = useState(false);
+  const [isSearching, setIsSearching]               = useState(false);
   const searchCancelled = useRef(false);
+
+  // ← NEW: refs to track counts
+  const availableCountRef   = useRef(0);
+  const unavailableCountRef = useRef(0);
 
   /* react-hook-form */
   const form = useForm<z.infer<typeof formSchema>>({
@@ -125,7 +128,7 @@ export default function DomainSeekerPage() {
       return;
     }
 
-    /* reset UI state */
+    /* reset UI & refs */
     setIsSearching(true);
     setAvailableDomains([]);
     setUnavailableDomains([]);
@@ -133,6 +136,8 @@ export default function DomainSeekerPage() {
     setProgress(0);
     setError(null);
     searchCancelled.current = false;
+    availableCountRef.current   = 0; // ← reset
+    unavailableCountRef.current = 0; // ← reset
 
     /* build domain list */
     const { keywords1, keywords2, tlds } = values;
@@ -178,11 +183,12 @@ export default function DomainSeekerPage() {
             const msg: { domain?: string; available?: boolean; error?: string; event?: string } =
               JSON.parse(line);
 
+            // ← DONE event: read from our refs
             if (msg.event === "done") {
               setProgress(100);
               toast({
                 title: "Search complete!",
-                description: `Found ${availableDomains.length} available domains.`,
+                description: `Found ${availableCountRef.current} available and ${unavailableCountRef.current} unavailable domains.`,
               });
               setIsSearching(false);
               return;
@@ -192,12 +198,14 @@ export default function DomainSeekerPage() {
               doneCnt += 1;
               setProgress(Math.round((doneCnt / domains.length) * 100));
 
-              if (msg.available === true && msg.domain) {
+              if (msg.available === true) {
+                availableCountRef.current += 1; // ← bump
                 setAvailableDomains(prev => [
                   ...prev,
                   { domain: msg.domain, status: "available" } as DomainResult,
                 ]);
-              } else if (msg.available === false && msg.domain) {
+              } else if (msg.available === false) {
+                unavailableCountRef.current += 1; // ← bump
                 setUnavailableDomains(prev => [
                   ...prev,
                   { domain: msg.domain, status: "unavailable" } as DomainResult,
@@ -205,7 +213,6 @@ export default function DomainSeekerPage() {
               } else {
                 setErrors(prev => [...prev, { domain: msg.domain ?? "?", error: msg.error }]);
               }
-              
             }
           }
         }
