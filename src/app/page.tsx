@@ -150,6 +150,7 @@ export default function DomainSeekerPage() {
   const [selectedDomains, setSelectedDomains] = useState<Set<string>>(new Set());
 
 
+
   // refs to track counts
   const availableCountRef = useRef(0);
   const unavailableCountRef = useRef(0);
@@ -320,19 +321,27 @@ export default function DomainSeekerPage() {
     });
   };
 
-  /* export available → CSV (now with header) */
+  /* export available → CSV (selected if any, otherwise all) */
   const exportToCsv = () => {
-    if (!availableDomains.length) {
+    // Prefer selected domains if any; otherwise export all available
+    const list = selectedDomains.size
+      ? availableDomains.filter((_, i) => selectedDomains.has(String(i)))
+      : availableDomains;
+
+    if (!list.length) {
       toast({
         variant: "destructive",
-        title: "No available domains",
-        description: "Run a search first, then export.",
+        title: "Nothing to export",
+        description:
+          selectedDomains.size
+            ? "No selected available domains to export."
+            : "Run a search first, then export.",
       });
       return;
     }
 
     // prepend header
-    const csvText = ["Domain", ...availableDomains.map((d) => d.domain)].join("\n");
+    const csvText = ["Domain", ...list.map((d) => d.domain)].join("\n");
 
     // encode UTF-8, normalize line endings
     const blob = new Blob([csvText.replace(/\n/g, "\r\n")], {
@@ -350,7 +359,7 @@ export default function DomainSeekerPage() {
 
     toast({
       title: "CSV exported",
-      description: `${availableDomains.length} domains saved with header row.`,
+      description: `${list.length} ${selectedDomains.size ? "selected " : ""}domains saved with header row.`,
     });
   };
 
@@ -658,20 +667,22 @@ export default function DomainSeekerPage() {
                 Available ({availableDomains.length})
               </CardTitle>
 
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={exportToCsv}
-                disabled={!availableDomains.length}
-              >
-                <Download className="h-4 w-4 mr-2" />
-                CSV
-              </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={exportToCsv}
+                  disabled={!availableDomains.length}
+                  title={selectedDomains.size ? `Export ${selectedDomains.size} selected` : "Export all available"}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  {selectedDomains.size ? `CSV (${selectedDomains.size})` : "CSV (All)"}
+                </Button>
             </CardHeader>
             <CardContent>
               {availableDomains.length ? (
                 <ResultsTable
                   results={availableDomains}
+                  selected={selectedDomains}
                   onSelectionChange={setSelectedDomains}
                 />
               ) : (
