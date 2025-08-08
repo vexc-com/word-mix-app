@@ -367,7 +367,7 @@ export default function DomainSeekerPage() {
       {/* header */}
       <div className="text-center animate-fade-in-down">
         <h1 className="text-4xl font-extrabold tracking-tight md:text-5xl lg:text-6xl bg-gradient-to-r from-indigo-600 to-pink-500 text-transparent bg-clip-text">
-          Word Mix
+          🚀 Word Mix
         </h1>
         <p className="mt-6 max-w-2xl mx-auto text-lg text-muted-foreground">
           Combine keyword lists to discover unique, available domain names
