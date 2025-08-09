@@ -117,153 +117,25 @@ const TldSelector: React.FC<TldSelectorProps> = ({
         <FormDescription className="text-sm font-normal text-muted-foreground/90">Type or select up to 50 extensions.</FormDescription>
       </div>
 
-      {/* Favorites row */}
-      {favoriteTlds.length > 0 && (
-        <>
-          <div className="mb-3">
-            <div className="text-xs font-semibold tracking-wide text-muted-foreground mb-1">
-              Favorites
-              {favSelectedCount > 0 && (
-                <span className="ml-2 text-[11px] font-medium text-muted-foreground">
-                  ({favSelectedCount} selected)
-                </span>
-              )}
-            </div>
-            <div className="flex sm:flex-wrap flex-nowrap overflow-x-auto gap-2 whitespace-nowrap">
-              {favoriteTlds.map((tld) => {
-                const pressed = isChecked(tld);
-                return (
-                    <Button
-                    key={tld}
-                      variant={pressed ? "secondary" : "outline"}
-                      size="sm"
-                      type="button"
-                      aria-pressed={pressed}
-                      aria-label={`${pressed ? "Remove" : "Add"} ${tld} ${pressed ? "from" : "to"} selection`}
-                      className="h-7 px-2"
-                      onClick={() => {
-                        if (pressed) {
-                          onChange((selected || []).filter((v) => v !== tld));
-                        } else {
-                          if (tryAddTld(tld)) {
-                            try { touchRecent(tld); } catch {}
-                          }
-                        }
-                      }}
-                    >
-                      {tld}
-                    </Button>
-                );
-              })}
-            </div>
-          </div>
-          {/* Divider: Favorites → Recently Used */}
-          <div className="border-t border-muted/30 my-3" />
-        </>
-      )}
-      {/* Recently Used row */}
-      {recentTlds.length > 0 && (
-        <>
-          <div className="mb-3">
-            <div className="text-xs font-semibold tracking-wide text-muted-foreground mb-1">
-              Recently Used
-              {recentSelectedCount > 0 && (
-                <span className="ml-2 text-[11px] font-medium text-muted-foreground">
-                  ({recentSelectedCount} selected)
-                </span>
-              )}
-            </div>
-            <div className="flex sm:flex-wrap flex-nowrap overflow-x-auto gap-2 whitespace-nowrap">
-              {recentTlds.map((tld) => {
-                const pressed = isChecked(tld);
-                return (
-                    <Button
-                    key={tld}
-                      variant={pressed ? "secondary" : "outline"}
-                      size="sm"
-                      type="button"
-                      aria-pressed={pressed}
-                      aria-label={`${pressed ? "Remove" : "Add"} ${tld} ${pressed ? "from" : "to"} selection`}
-                      className="h-7 px-2"
-                      onClick={() => {
-                        if (pressed) {
-                          onChange((selected || []).filter((v) => v !== tld));
-                        } else {
-                          if (tryAddTld(tld)) {
-                            try { touchRecent(tld); } catch {}
-                          }
-                        }
-                      }}
-                    >
-                      {tld}
-                    </Button>
-                );
-              })}
-            </div>
-          </div>
-          {/* Divider: Recently Used → Popular */}
-          <div className="border-t border-muted/30 my-3" />
-        </>
-      )}
-
-      {/* Popular pills / checkboxes */}
-      <div className="flex items-center gap-4 flex-wrap">
-        {popular.map((tld) => (
-          <div key={tld} className="flex flex-row items-center space-x-2 space-y-0">
-            <Checkbox
-              checked={isChecked(tld)}
-              onCheckedChange={(c) => toggle(tld, c)}
-              aria-label={`Toggle ${tld}`}
-              className="border-primary/70"
-            />
-            <span className={`text-sm ${isChecked(tld) ? "font-semibold" : "font-medium"} text-foreground select-none`}>{tld}</span>
-          </div>
-        ))}
-        <div className="flex items-center gap-2">
-          <input
-            type="text"
-            value={custom}
-            onChange={(e) => {
-              setCustom(e.target.value);
-              setInputError("");
-            }}
-            onKeyDown={(e) => {
-              if (e.key !== "Enter") return;
-              e.preventDefault();
-              e.stopPropagation();
-              const val = normalizeTld(custom);
-              if (!val) return;
-              if (!safeIsLikelyValid(val)) {
-                setInputError("That doesn’t look like a valid extension.");
-                return;
-              }
-              if (!selected?.includes(val)) {
-                if (tryAddTld(val)) {
-                  try { touchRecent(val); } catch {}
-                }
-              }
-              setCustom("");
-            }}
-            placeholder="Add custom TLD…"
-            aria-label="Add custom TLD"
-            className="h-9 w-[140px] rounded-md border border-input bg-background px-3 text-xs font-medium text-foreground placeholder:text-muted-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
-          />
-        </div>
-        <Popover open={open} onOpenChange={setOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              type="button"
-              role="combobox"
-              aria-expanded={open}
-              className="w-[150px] justify-between"
-            >
-              Search TLDs...
-              <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-[260px] p-0">
-            <div className="p-2 border-b border-muted/30">
+      {/* Toolbar Row: Search, Custom, Counter+CTA cluster */}
+      <div className="grid grid-cols-12 items-center gap-x-2 mb-3 sm:grid-cols-[3fr_2fr_auto_auto]">
+        {/* Search TLDs (known list + customs via Enter) */}
+        <div className="col-span-12 sm:col-span-1">
+          <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                type="button"
+                role="combobox"
+                aria-expanded={open}
+                className="w-full justify-between h-10"
+              >
+                Search TLDs...
+                <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[320px] p-0">
+              <div className="p-2 border-b border-muted/30">
                 <input
                   autoFocus
                   type="text"
@@ -295,57 +167,202 @@ const TldSelector: React.FC<TldSelectorProps> = ({
                   placeholder="Search known TLDs or type a custom one..."
                   className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
                 />
-            </div>
-            <Command>
-              <CommandList>
-                <CommandEmpty className="p-2 text-sm text-muted-foreground">No TLDs match.</CommandEmpty>
-                <CommandGroup>
-                  {secondary
-                    .filter((t) => {
-                      const q = query.trim().toLowerCase();
-                      if (!q) return true;
-                      // match either raw text or normalized with dot
-                      const qDot = q.startsWith(".") ? q : `.${q}`;
-                      return t.includes(qDot) || t.includes(q);
-                    })
-                    .map((tld) => (
-                      <CommandItem
-                        key={tld}
-                        value={tld}
-                        onSelect={(v) => {
-                          if (typeof v === "string" && !isChecked(v)) {
-                            if (tryAddTld(v)) {
-                              try { touchRecent(v); } catch {}
+              </div>
+              <Command>
+                <CommandList>
+                  <CommandEmpty className="p-2 text-sm text-muted-foreground">No TLDs match.</CommandEmpty>
+                  <CommandGroup>
+                    {secondary
+                      .filter((t) => {
+                        const q = query.trim().toLowerCase();
+                        if (!q) return true;
+                        const qDot = q.startsWith(".") ? q : `.${q}`;
+                        return t.includes(qDot) || t.includes(q);
+                      })
+                      .map((tld) => (
+                        <CommandItem
+                          key={tld}
+                          value={tld}
+                          onSelect={(v) => {
+                            if (typeof v === "string" && !isChecked(v)) {
+                              if (tryAddTld(v)) {
+                                try { touchRecent(v); } catch {}
+                              }
                             }
-                          }
-                          setQuery("");
-                          setOpen(false);
-                        }}
-                      >
-                        <Check className={`mr-2 h-4 w-4 ${isChecked(tld) ? "opacity-100" : "opacity-0"}`} />
-                        {tld}
-                      </CommandItem>
-                    ))}
-                </CommandGroup>
-              </CommandList>
-            </Command>
-          </PopoverContent>
-        </Popover>
-        <div
-          className={`whitespace-nowrap self-center ${counterColor}`}
-          aria-live="polite"
-        >
-          <span className="text-xs font-medium text-foreground/80">{selected?.length ?? 0}</span>
-          {" / "}
-          <span className="text-xs font-normal text-foreground/80">{MAX_TLDS}</span>
-          {" selected"}
+                            setQuery("");
+                            setOpen(false);
+                          }}
+                        >
+                          <Check className={`mr-2 h-4 w-4 ${isChecked(tld) ? "opacity-100" : "opacity-0"}`} />
+                          {tld}
+                        </CommandItem>
+                      ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
         </div>
-        {capMessage && (
-          <p className="text-xs text-muted-foreground mt-1">{capMessage}</p>
-        )}
-        {inputError && (
-          <p className="text-xs font-medium text-destructive mt-1">{inputError}</p>
-        )}
+
+        {/* Add custom TLD */}
+        <div className="col-span-12 sm:col-span-1">
+          <input
+            type="text"
+            value={custom}
+            onChange={(e) => {
+              setCustom(e.target.value);
+              setInputError("");
+            }}
+            onKeyDown={(e) => {
+              if (e.key !== "Enter") return;
+              e.preventDefault();
+              e.stopPropagation();
+              const val = normalizeTld(custom);
+              if (!val) return;
+              if (!safeIsLikelyValid(val)) {
+                setInputError("That doesn’t look like a valid extension.");
+                return;
+              }
+              if (!selected?.includes(val)) {
+                if (tryAddTld(val)) {
+                  try { touchRecent(val); } catch {}
+                }
+              }
+              setCustom("");
+            }}
+            placeholder="Add custom TLD…"
+            aria-label="Add custom TLD"
+            className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm font-medium text-foreground placeholder:text-muted-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          />
+        </div>
+
+        {/* Counter + CTA cluster */}
+        <div className="col-span-12 sm:col-span-2 h-10 flex items-center justify-end gap-2">
+          <div className="h-10 flex items-center text-right whitespace-nowrap">
+            <span className="text-sm font-medium text-foreground/80">{selected?.length ?? 0}</span>
+            {" / "}
+            <span className="text-sm font-normal text-foreground/80">{MAX_TLDS}</span>
+          </div>
+          <Button type="button" className="min-w-[148px] h-10 font-semibold">
+            ✨ Find My Domains
+          </Button>
+        </div>
+      </div>
+
+      {/* Inline messages under toolbar */}
+      {(capMessage || inputError) && (
+        <div className="mt-1 flex flex-col gap-1">
+          {capMessage && (
+            <p className="text-xs text-muted-foreground" aria-live="polite">{capMessage}</p>
+          )}
+          {inputError && (
+            <p className="text-xs font-medium text-destructive" aria-live="polite">{inputError}</p>
+          )}
+        </div>
+      )}
+
+      {/* Favorites row */}
+      {favoriteTlds.length > 0 && (
+        <>
+          <div className="mb-3">
+            <div className="text-xs font-semibold tracking-wide text-muted-foreground mb-1">
+              Favorites
+              {favSelectedCount > 0 && (
+                <span className="ml-2 text-[11px] font-medium text-muted-foreground">
+                  ({favSelectedCount} selected)
+                </span>
+              )}
+            </div>
+            <div className="flex sm:flex-wrap flex-nowrap overflow-x-auto gap-2 whitespace-nowrap">
+              {favoriteTlds.map((tld) => {
+                const pressed = isChecked(tld);
+                return (
+                  <Button
+                    key={tld}
+                    variant={pressed ? "secondary" : "outline"}
+                    size="sm"
+                    type="button"
+                    aria-pressed={pressed}
+                    aria-label={`${pressed ? "Remove" : "Add"} ${tld} ${pressed ? "from" : "to"} selection`}
+                    className="h-7 px-2"
+                    onClick={() => {
+                      if (pressed) {
+                        onChange((selected || []).filter((v) => v !== tld));
+                      } else {
+                        if (tryAddTld(tld)) {
+                          try { touchRecent(tld); } catch {}
+                        }
+                      }
+                    }}
+                  >
+                    {tld}
+                  </Button>
+                );
+              })}
+            </div>
+          </div>
+          {/* Divider: Favorites → Recently Used */}
+          <div className="border-t border-muted/30 my-3" />
+        </>
+      )}
+      {/* Recently Used row */}
+      {recentTlds.length > 0 && (
+        <>
+          <div className="mb-3">
+            <div className="text-xs font-semibold tracking-wide text-muted-foreground mb-1">
+              Recently Used
+              {recentSelectedCount > 0 && (
+                <span className="ml-2 text-[11px] font-medium text-muted-foreground">
+                  ({recentSelectedCount} selected)
+                </span>
+              )}
+            </div>
+            <div className="flex sm:flex-wrap flex-nowrap overflow-x-auto gap-2 whitespace-nowrap">
+              {recentTlds.map((tld) => {
+                const pressed = isChecked(tld);
+                return (
+                  <Button
+                    key={tld}
+                    variant={pressed ? "secondary" : "outline"}
+                    size="sm"
+                    type="button"
+                    aria-pressed={pressed}
+                    aria-label={`${pressed ? "Remove" : "Add"} ${tld} ${pressed ? "from" : "to"} selection`}
+                    className="h-7 px-2"
+                    onClick={() => {
+                      if (pressed) {
+                        onChange((selected || []).filter((v) => v !== tld));
+                      } else {
+                        if (tryAddTld(tld)) {
+                          try { touchRecent(tld); } catch {}
+                        }
+                      }
+                    }}
+                  >
+                    {tld}
+                  </Button>
+                );
+              })}
+            </div>
+          </div>
+          {/* Divider: Recently Used → Popular */}
+          <div className="border-t border-muted/30 my-3" />
+        </>
+      )}
+
+      {/* Popular pills / checkboxes */}
+      <div className="flex items-center gap-4 flex-wrap">
+        {popular.map((tld) => (
+          <div key={tld} className="flex flex-row items-center space-x-2 space-y-0">
+            <Checkbox
+              checked={isChecked(tld)}
+              onCheckedChange={(c) => toggle(tld, c)}
+              aria-label={`Toggle ${tld}`}
+              className="border-primary/70"
+            />
+            <span className={`text-sm ${isChecked(tld) ? "font-semibold" : "font-medium"} text-foreground select-none`}>{tld}</span>
+          </div>
+        ))}
       </div>
 
       {/* Chips for selected TLDs */}
