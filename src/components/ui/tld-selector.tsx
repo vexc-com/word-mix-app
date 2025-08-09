@@ -219,6 +219,36 @@ const TldSelector: React.FC<TldSelectorProps> = ({
             <span className={`text-sm ${isChecked(tld) ? "font-semibold" : "font-medium"} text-foreground select-none`}>{tld}</span>
           </div>
         ))}
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            value={custom}
+            onChange={(e) => {
+              setCustom(e.target.value);
+              setInputError("");
+            }}
+            onKeyDown={(e) => {
+              if (e.key !== "Enter") return;
+              e.preventDefault();
+              e.stopPropagation();
+              const val = normalizeTld(custom);
+              if (!val) return;
+              if (!safeIsLikelyValid(val)) {
+                setInputError("That doesn’t look like a valid extension.");
+                return;
+              }
+              if (!selected?.includes(val)) {
+                if (tryAddTld(val)) {
+                  try { touchRecent(val); } catch {}
+                }
+              }
+              setCustom("");
+            }}
+            placeholder="Add custom TLD…"
+            aria-label="Add custom TLD"
+            className="h-9 w-[140px] rounded-md border border-input bg-background px-3 text-xs font-medium text-foreground placeholder:text-muted-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          />
+        </div>
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
             <Button
@@ -226,9 +256,9 @@ const TldSelector: React.FC<TldSelectorProps> = ({
               type="button"
               role="combobox"
               aria-expanded={open}
-              className="w-[200px] justify-between"
+              className="w-[150px] justify-between"
             >
-              Add or search TLDs...
+              Search TLDs...
               <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
             </Button>
           </PopoverTrigger>
@@ -244,6 +274,8 @@ const TldSelector: React.FC<TldSelectorProps> = ({
                   }}
                   onKeyDown={(e) => {
                     if (e.key !== "Enter") return;
+                    e.preventDefault();
+                    e.stopPropagation();
                     const val = normalizeTld(query);
                     if (!val) return;
                     if (!safeIsLikelyValid(val)) {
@@ -299,34 +331,6 @@ const TldSelector: React.FC<TldSelectorProps> = ({
             </Command>
           </PopoverContent>
         </Popover>
-        <div className="flex items-center gap-2">
-          <input
-            type="text"
-            value={custom}
-            onChange={(e) => {
-              setCustom(e.target.value);
-              setInputError("");
-            }}
-            onKeyDown={(e) => {
-              if (e.key !== "Enter") return;
-              const val = normalizeTld(custom);
-              if (!val) return;
-              if (!safeIsLikelyValid(val)) {
-                setInputError("That doesn’t look like a valid extension.");
-                return;
-              }
-              if (!selected?.includes(val)) {
-                if (tryAddTld(val)) {
-                  try { touchRecent(val); } catch {}
-                }
-              }
-              setCustom("");
-            }}
-            placeholder="Add custom TLD…"
-            aria-label="Add custom TLD"
-            className="h-9 w-[200px] rounded-md border border-input bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
-          />
-        </div>
         <div
           className={`whitespace-nowrap self-center ${counterColor}`}
           aria-live="polite"
