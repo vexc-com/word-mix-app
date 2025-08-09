@@ -21,7 +21,7 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, startTransition } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -129,17 +129,13 @@ const formSchema = z.object({
 /* ───────────────────────────────────────── */
 
 export default function DomainSeekerPage() {
+  /* ─────────── React Hooks (declare all at top, unconditional) ─────────── */
   const { toast } = useToast();
-  const [isPending, startTransition] = useTransition();
 
-  /* state */
+  // state
   const [availableDomains, setAvailableDomains] = useState<DomainResult[]>([]);
-  const [unavailableDomains, setUnavailableDomains] = useState<DomainResult[]>(
-    [],
-  );
-  const [errors, setErrors] = useState<
-    { domain: string; error?: string }[]
-  >([]);
+  const [unavailableDomains, setUnavailableDomains] = useState<DomainResult[]>([]);
+  const [errors, setErrors] = useState<{ domain: string; error?: string }[]>([]);
   const [progress, setProgress] = useState(0);
   const [totalChecks, setTotalChecks] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -149,28 +145,27 @@ export default function DomainSeekerPage() {
   const searchCancelled = useRef(false);
   const [selectedDomains, setSelectedDomains] = useState<Set<string>>(new Set());
 
-
-
   // refs to track counts
   const availableCountRef = useRef(0);
   const unavailableCountRef = useRef(0);
 
-  /* react-hook-form */
+  // react-hook-form
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: { keywords1: "", keywords2: "", tlds: [".com"] },
   });
   const selectedTlds = form.watch("tlds");
   const formValues = form.watch();
+  /* ─────────── End Hooks ─────────── */
 
-  /* helpers */
+  // helpers
   const splitKeywords = (kw: string) =>
     kw
       .split(/[\n,]/)
       .map((k) => k.trim())
       .filter(Boolean);
 
-  /* recompute totalChecks on form change */
+  // recompute totalChecks on form change
   useEffect(() => {
     const { keywords1, keywords2, tlds } = form.getValues();
     const a = splitKeywords(keywords1 || "") || [""];
@@ -264,10 +259,17 @@ export default function DomainSeekerPage() {
             // DONE event: read from refs
             if (msg.event === "done") {
               setProgress(100);
-              toast({
-                title: "Search complete!",
-                description: `Found ${availableCountRef.current} available and ${unavailableCountRef.current} unavailable domains.`,
-              });
+              if (availableCountRef.current === 0) {
+                toast({
+                  title: "No matches found. Try again?",
+                  description: "",
+                });
+              } else {
+                toast({
+                  title: "Search complete!",
+                  description: `Found ${availableCountRef.current} available and ${unavailableCountRef.current} unavailable domains.`,
+                });
+              }
               setIsSearching(false);
               return;
             }
@@ -313,6 +315,13 @@ export default function DomainSeekerPage() {
   }
 
   /* clipboard, CSV export, cancel */
+
+  // Returns selected available domains (by row index), or all if none selected
+  const getSelectedAvailable = () =>
+    selectedDomains.size
+      ? availableDomains.filter((_, i) => selectedDomains.has(String(i)))
+      : availableDomains;
+
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text).then(() => {
       setCopiedDomain(text);
@@ -321,12 +330,26 @@ export default function DomainSeekerPage() {
     });
   };
 
+  // Copy only selected domains to clipboard (requires at least one selection)
+  const copySelected = () => {
+    if (!selectedDomains.size) {
+      toast({
+        variant: "destructive",
+        title: "No selection",
+        description: "Select at least one domain first.",
+      });
+      return;
+    }
+    const list = availableDomains.filter((_, i) => selectedDomains.has(String(i)));
+    const text = list.map((d) => d.domain).join("\n");
+    navigator.clipboard.writeText(text).then(() => {
+      toast({ title: "Copied", description: `${list.length} domain${list.length === 1 ? "" : "s"} copied to clipboard.` });
+    });
+  };
+
   /* export available → CSV (selected if any, otherwise all) */
   const exportToCsv = () => {
-    // Prefer selected domains if any; otherwise export all available
-    const list = selectedDomains.size
-      ? availableDomains.filter((_, i) => selectedDomains.has(String(i)))
-      : availableDomains;
+    const list = getSelectedAvailable();
 
     if (!list.length) {
       toast({
@@ -363,6 +386,32 @@ export default function DomainSeekerPage() {
     });
   };
 
+  /* export available → TXT (selected if any, otherwise all) */
+  const exportToTxt = () => {
+    const list = getSelectedAvailable();
+    if (!list.length) {
+      toast({
+        variant: "destructive",
+        title: "Nothing to export",
+        description: "Run a search first, then export.",
+      });
+      return;
+    }
+
+    const txt = list.map((d) => d.domain).join("\n");
+    const blob = new Blob([txt.replace(/\n/g, "\r\n")], { type: "text/plain;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const stamp = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = `wordmix-available-${stamp}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
+    toast({ title: "TXT exported", description: `${list.length} domain${list.length === 1 ? "" : "s"} saved.` });
+  };
+
 
   const handleCancelSearch = () => {
     searchCancelled.current = true;
@@ -374,13 +423,12 @@ export default function DomainSeekerPage() {
   return (
     <main className="container mx-auto max-w-4xl px-4 py-16 md:py-24">
       {/* header */}
-      <div className="text-center animate-fade-in-down">
-        <h1 className="text-4xl font-extrabold tracking-tight md:text-5xl lg:text-6xl bg-gradient-to-r from-indigo-600 to-pink-500 text-transparent bg-clip-text">
-          🚀 Word Mix
+      <div className="bg-gradient-to-b from-purple-50 to-white dark:from-slate-900/40 dark:to-slate-950 pt-8 pb-6 text-center animate-fade-in-down">
+        <h1 className="text-5xl md:text-6xl lg:text-7xl leading-tight font-extrabold tracking-tight bg-gradient-to-r from-indigo-600 to-pink-500 text-transparent bg-clip-text">
+        Word Mix
         </h1>
-        <p className="mt-6 max-w-2xl mx-auto text-lg text-muted-foreground">
-          Combine keyword lists to discover unique, available domain names
-          instantly.
+        <p className="mt-6 max-w-2xl mx-auto text-lg md:text-xl text-muted-foreground">
+          Mix words. Find names. Launch faster. 🚀
         </p>
       </div>
 
@@ -400,7 +448,7 @@ export default function DomainSeekerPage() {
                 render={({ field }) => (
                   <FormItem>
                     <div className="flex justify-between items-center mb-2">
-                      <FormLabel>Keyword List 1</FormLabel>
+                      <FormLabel>Prefix Keywords</FormLabel>
                       <Select
                         onValueChange={(v) =>
                           handlePresetChange(v, "list1", field.onChange)
@@ -422,7 +470,7 @@ export default function DomainSeekerPage() {
                     </div>
                     <FormControl>
                       <Textarea
-                        placeholder="cloud, data, web"
+                        placeholder="Words that will go at the start (e.g., cloud, data, web)."
                         {...field}
                         rows={5}
                       />
@@ -438,7 +486,7 @@ export default function DomainSeekerPage() {
                 render={({ field }) => (
                   <FormItem>
                     <div className="flex justify-between items-center mb-2">
-                      <FormLabel>Keyword List 2 (optional)</FormLabel>
+                      <FormLabel>Suffix Keywords (Optional)</FormLabel>
                       <Select
                         onValueChange={(v) =>
                           handlePresetChange(v, "list2", field.onChange)
@@ -460,14 +508,11 @@ export default function DomainSeekerPage() {
                     </div>
                     <FormControl>
                       <Textarea
-                        placeholder="base, stack, flow"
+                        placeholder="Words that will go at the end (e.g., base, stack, flow)."
                         {...field}
                         rows={5}
                       />
                     </FormControl>
-                    <FormDescription>
-                      Combine with List 1 to form names like “cloudbase”.
-                    </FormDescription>
                   </FormItem>
                 )}
               />
@@ -480,9 +525,9 @@ export default function DomainSeekerPage() {
               render={({ field }) => (
                 <FormItem>
                   <div className="mb-4">
-                    <FormLabel>Top-Level Domains (TLDs)</FormLabel>
+                    <FormLabel>Choose TLDs to check</FormLabel>
                     <FormDescription>
-                      Select which TLDs you want to check against.
+                      Select the extensions you want to search.
                     </FormDescription>
                   </div>
                   <div className="flex items-center gap-4 flex-wrap">
@@ -593,14 +638,16 @@ export default function DomainSeekerPage() {
                   disabled={
                     isSearching || totalChecks > MAX_DOMAINS || totalChecks === 0
                   }
-                  className="w-full sm:w-auto btn-gradient"
+                  className="w-full sm:w-auto btn-gradient font-semibold"
                 >
                   {isSearching ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Checking...
+                    </>
                   ) : (
-                    <Sparkles className="mr-2 h-4 w-4" />
+                    <>✨ Find My Domains</>
                   )}
-                  {isSearching ? "Checking..." : "Find Domains"}
                 </Button>
                 {isSearching && (
                   <Button
@@ -645,8 +692,13 @@ export default function DomainSeekerPage() {
           style={{ animationDelay: "0.4s" }}
         >
           <p className="text-muted-foreground">
-            Search complete. Found {availableDomains.length} available domains.
+            {`Search complete — ${availableDomains.length} available.`}
           </p>
+          {availableDomains.length === 0 && (
+            <p className="text-xs text-muted-foreground mt-1">
+              💡 Tip: Add synonyms or swap word order.
+            </p>
+          )}
         </div>
       )}
 
@@ -659,26 +711,49 @@ export default function DomainSeekerPage() {
         <TiltCard glowColor="#EC4899">
           <Card className="shadow-lg bg-off-white border-gray-200/50 w-full h-full">
             {/* header with CSV export */}
-            <CardHeader className="flex items-center justify-between">
-              <CardTitle className="text-primary flex items-center">
+            <CardHeader className="flex items-center justify-between border-b border-muted/30 pb-2 mb-2">
+              <CardTitle className="flex items-center text-sm font-semibold text-primary">
                 <div className="mr-2 flex h-5 w-5 items-center justify-center rounded-full bg-pink-500">
                   <Check className="h-3 w-3 text-white" />
                 </div>
                 Available ({availableDomains.length})
               </CardTitle>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={copySelected}
+                  disabled={selectedDomains.size === 0}
+                  title={selectedDomains.size ? `Copy ${selectedDomains.size} selected` : "Select rows to enable"}
+                >
+                  <Copy className="h-4 w-4 mr-2" />
+                  Copy ({selectedDomains.size})
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={exportToTxt}
+                  disabled={selectedDomains.size === 0}
+                  title={selectedDomains.size ? `Export ${selectedDomains.size} selected as .txt` : "Export selected as .txt"}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  TXT ({selectedDomains.size})
+                </Button>
 
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={exportToCsv}
-                  disabled={!availableDomains.length}
-                  title={selectedDomains.size ? `Export ${selectedDomains.size} selected` : "Export all available"}
+                  disabled={selectedDomains.size === 0}
+                  title={selectedDomains.size ? `Export ${selectedDomains.size} selected as .csv` : "Export selected as .csv"}
                 >
                   <Download className="h-4 w-4 mr-2" />
-                  {selectedDomains.size ? `CSV (${selectedDomains.size})` : "CSV (All)"}
+                  CSV ({selectedDomains.size})
                 </Button>
+              </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-2">
               {availableDomains.length ? (
                 <ResultsTable
                   results={availableDomains}
@@ -689,7 +764,7 @@ export default function DomainSeekerPage() {
                 <p className="text-sm text-muted-foreground text-center py-10">
                   {isSearching
                     ? "Searching for available domains..."
-                    : "No available domains found."}
+                    : "Start your search to see which domains are free to register."}
                 </p>
               )}
             </CardContent>
@@ -728,7 +803,7 @@ export default function DomainSeekerPage() {
                 <p className="text-sm text-muted-foreground text-center py-10">
                   {isSearching
                     ? "Checking domains..."
-                    : "No unavailable domains found."}
+                    : "We’ll list taken domains here once you check availability."}
                 </p>
               )}
             </CardContent>

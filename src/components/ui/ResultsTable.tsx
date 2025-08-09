@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { DomainResult } from "@/app/actions"; // shared type (must include `domain: string`)
 
@@ -30,22 +31,34 @@ const ResultsTable: React.FC<Props> = ({ results, selected, onSelectionChange })
   };
 
   return (
-    <ScrollArea className="h-96 border rounded-lg">
-      <table className="min-w-full text-sm">
+    <TooltipProvider>
+      <ScrollArea className="h-96 border rounded-lg z-0">
+        <table className="min-w-full text-sm">
         <thead>
           <tr className="sticky top-0 bg-background/70 backdrop-blur">
-            <th className="w-10 p-2 text-center">
-              <div className="flex justify-center">
-                <Checkbox
-                  checked={someSelected ? "indeterminate" : allSelected}
-                  onCheckedChange={(c) => toggleAll(Boolean(c))}
-                  aria-label={allSelected ? "Deselect all" : "Select all"}
-                />
+            <th className="w-10 text-center">
+              <div className="flex items-center justify-center">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Checkbox
+                      className="focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                      checked={someSelected ? "indeterminate" : allSelected}
+                      onCheckedChange={(c) => toggleAll(Boolean(c))}
+                      aria-label="Select or deselect all domains"
+                    />
+                  </TooltipTrigger>
+                  <TooltipContent side="right" align="center" sideOffset={12} className="z-50">
+                    Select/Deselect all
+                  </TooltipContent>
+                </Tooltip>
               </div>
             </th>
-            <th className="px-3 py-2 text-left font-medium">Domain</th>
-            <th className="px-3 py-2 text-left font-medium">TLD</th>
-            <th className="px-3 py-2 text-left font-medium">Len.</th>
+            <th className="px-4 py-2 text-left">
+              <div className="flex items-center">
+                <span className="font-medium">Domain</span>
+              </div>
+            </th>
+            <th className="px-4 py-2 text-right font-medium tabular-nums">Len.</th>
           </tr>
         </thead>
         <tbody>
@@ -59,18 +72,28 @@ const ResultsTable: React.FC<Props> = ({ results, selected, onSelectionChange })
             const rowId = String(i);
 
             return (
-              <tr key={domain} className="border-t hover:bg-muted/40">
-                <td className="p-2 text-center">
-                  <div className="flex justify-center">
+              <tr key={rowId} className="border-t odd:bg-muted/5 hover:bg-muted/10 transition-colors">
+                <td className="w-10 text-center">
+                  <div className="flex items-center justify-center">
                     <Checkbox
+                      className="focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                       checked={selected.has(rowId)}
                       onCheckedChange={() => toggle(rowId)}
                     />
                   </div>
                 </td>
-                <td className="px-3 py-2 font-mono">{namePart}</td>
-                <td className="px-3 py-2">.{tldPart}</td>
-                <td className="px-3 py-2">{nameLen}</td>
+                <td className="px-4 py-2 font-mono">
+                  <a
+                    href={"https://" + domain}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline-offset-2 hover:underline focus-visible:underline focus:outline-none"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {domain}
+                  </a>
+                </td>
+                <td className="px-4 py-2 text-right tabular-nums">{nameLen}</td>
               </tr>
             );
           })}
@@ -78,7 +101,7 @@ const ResultsTable: React.FC<Props> = ({ results, selected, onSelectionChange })
           {results.length === 0 && (
             <tr>
               <td
-                colSpan={4}
+                colSpan={3}
                 className="px-3 py-6 text-center text-sm text-muted-foreground"
               >
                 No results yet
@@ -87,7 +110,8 @@ const ResultsTable: React.FC<Props> = ({ results, selected, onSelectionChange })
           )}
         </tbody>
       </table>
-    </ScrollArea>
+      </ScrollArea>
+    </TooltipProvider>
   );
 };
 
