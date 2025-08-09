@@ -1,5 +1,3 @@
-
-
 "use client";
 
 import React, { useMemo, useState } from "react";
@@ -61,6 +59,8 @@ const TldSelector: React.FC<TldSelectorProps> = ({
   );
 
   const isChecked = (tld: string) => selected?.includes(tld);
+  const favSelectedCount = favoriteTlds.filter((t) => isChecked(t)).length;
+  const recentSelectedCount = recentTlds.filter((t) => isChecked(t)).length;
 
   // Helper to cap TLDs at MAX_TLDS and show message (defensive)
   const tryAddTld = (tld: string) => {
@@ -98,21 +98,37 @@ const TldSelector: React.FC<TldSelectorProps> = ({
 
   // Removed allPopularSelected and somePopularSelected as no longer needed
 
+  // Selection counter color logic
+  const count = selected?.length ?? 0;
+  let counterColor = "text-muted-foreground";
+  if (count >= 40 && count < MAX_TLDS) {
+    counterColor = "text-amber-600 dark:text-amber-400";
+  } else if (count === MAX_TLDS) {
+    counterColor = "text-red-600 dark:text-red-400";
+  }
+
   return (
     <section aria-label="Top-level domain selector">
       <div className="mb-4">
-        <FormLabel>
+        <FormLabel className="text-lg font-medium tracking-tight text-foreground">
           Choose TLDs to check
-          <span className="ml-2 text-sm font-normal text-muted-foreground">({selected?.length ?? 0} selected)</span>
+          <span className="ml-2 text-sm font-medium text-muted-foreground">({selected?.length ?? 0} selected)</span>
         </FormLabel>
-        <FormDescription>Type or select up to 50 extensions.</FormDescription>
+        <FormDescription className="text-sm font-normal text-muted-foreground/90">Type or select up to 50 extensions.</FormDescription>
       </div>
 
       {/* Favorites row */}
       {favoriteTlds.length > 0 && (
         <>
           <div className="mb-3">
-            <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Favorites</div>
+            <div className="text-xs font-semibold tracking-wide text-muted-foreground mb-1">
+              Favorites
+              {favSelectedCount > 0 && (
+                <span className="ml-2 text-[11px] font-medium text-muted-foreground">
+                  ({favSelectedCount} selected)
+                </span>
+              )}
+            </div>
             <div className="flex sm:flex-wrap flex-nowrap overflow-x-auto gap-2 whitespace-nowrap">
               {favoriteTlds.map((tld) => {
                 const pressed = isChecked(tld);
@@ -149,7 +165,14 @@ const TldSelector: React.FC<TldSelectorProps> = ({
       {recentTlds.length > 0 && (
         <>
           <div className="mb-3">
-            <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Recently Used</div>
+            <div className="text-xs font-semibold tracking-wide text-muted-foreground mb-1">
+              Recently Used
+              {recentSelectedCount > 0 && (
+                <span className="ml-2 text-[11px] font-medium text-muted-foreground">
+                  ({recentSelectedCount} selected)
+                </span>
+              )}
+            </div>
             <div className="flex sm:flex-wrap flex-nowrap overflow-x-auto gap-2 whitespace-nowrap">
               {recentTlds.map((tld) => {
                 const pressed = isChecked(tld);
@@ -191,8 +214,9 @@ const TldSelector: React.FC<TldSelectorProps> = ({
               checked={isChecked(tld)}
               onCheckedChange={(c) => toggle(tld, c)}
               aria-label={`Toggle ${tld}`}
+              className="border-primary/70"
             />
-            <span className="font-normal select-none">{tld}</span>
+            <span className={`text-sm ${isChecked(tld) ? "font-semibold" : "font-medium"} text-foreground select-none`}>{tld}</span>
           </div>
         ))}
         <Popover open={open} onOpenChange={setOpen}>
@@ -236,8 +260,8 @@ const TldSelector: React.FC<TldSelectorProps> = ({
                     setQuery("");
                     setOpen(false);
                   }}
-                placeholder="Search known TLDs or type a custom one..."
-                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  placeholder="Search known TLDs or type a custom one..."
+                  className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
                 />
             </div>
             <Command>
@@ -300,27 +324,30 @@ const TldSelector: React.FC<TldSelectorProps> = ({
             }}
             placeholder="Add custom TLD…"
             aria-label="Add custom TLD"
-            className="h-9 w-[200px] rounded-md border border-input bg-background px-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            className="h-9 w-[200px] rounded-md border border-input bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </div>
         <div
-          className="text-xs text-muted-foreground whitespace-nowrap self-center"
+          className={`whitespace-nowrap self-center ${counterColor}`}
           aria-live="polite"
         >
-          {(selected?.length ?? 0)} / {MAX_TLDS} selected
+          <span className="text-xs font-medium text-foreground/80">{selected?.length ?? 0}</span>
+          {" / "}
+          <span className="text-xs font-normal text-foreground/80">{MAX_TLDS}</span>
+          {" selected"}
         </div>
         {capMessage && (
-          <p className="text-xs text-red-500 mt-1">{capMessage}</p>
+          <p className="text-xs text-muted-foreground mt-1">{capMessage}</p>
         )}
         {inputError && (
-          <p className="text-xs text-red-500 mt-1">{inputError}</p>
+          <p className="text-xs font-medium text-destructive mt-1">{inputError}</p>
         )}
       </div>
 
       {/* Chips for selected TLDs */}
       <div className="mt-4 flex flex-wrap gap-2">
           {(selected ?? []).map((tld) => (
-          <Badge key={tld} variant="secondary" className="pl-2 pr-1 flex items-center gap-1">
+          <Badge key={tld} variant="secondary" className="pl-2 pr-1 flex items-center gap-1 font-semibold text-foreground">
               {tld}
               {/* Right-aligned controls */}
               <span className="ml-auto flex items-center gap-1">
@@ -339,7 +366,7 @@ const TldSelector: React.FC<TldSelectorProps> = ({
                   }}
                   title={favoriteTlds.includes(tld) ? "Unheart" : "Heart"}
                 >
-                  <Heart className={`h-3 w-3 ${favoriteTlds.includes(tld) ? "fill-pink-500 text-pink-500" : "text-muted-foreground"}`} />
+                  <Heart className={`h-2.5 w-2.5 ${favoriteTlds.includes(tld) ? "text-primary fill-current" : "text-muted-foreground"}`} />
                 </Button>
                 <Button
                   variant="ghost"
@@ -355,6 +382,7 @@ const TldSelector: React.FC<TldSelectorProps> = ({
             </Badge>
           ))}
         </div>
+
     </section>
   );
 };

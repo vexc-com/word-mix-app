@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from "react";
 import { loadLocal, saveLocal } from "@/lib/utils";
 import { normalizeTld } from "@/lib/tlds";
