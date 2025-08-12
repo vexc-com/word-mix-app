@@ -464,15 +464,22 @@ export default function DomainSeekerPage() {
               control={form.control}
               name="tlds"
               render={({ field }) => (
-                <FormItem>
-                  <TldSelector
-                    selected={field.value || []}
-                    onChange={field.onChange}
-                    popular={popularTlds}
-                    allKnown={knownTlds}
-                  />
-                  <FormMessage />
-                </FormItem>
+                <>
+                  <a href="#tld-grid" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 bg-primary text-primary-foreground px-3 py-2 rounded-md shadow">Skip to TLD list</a>
+                  <section aria-labelledby="tld-heading">
+                    <FormItem>
+                      <h3 id="tld-heading" className="sr-only">Choose TLDs to check</h3>
+                      <TldSelector
+                        selected={field.value || []}
+                        onChange={field.onChange}
+                        popular={popularTlds}
+                        allKnown={knownTlds}
+                      />
+                      <FormMessage />
+                    </FormItem>
+                    {/* end of TLD section */}
+                  </section>
+                </>
               )}
             />
 

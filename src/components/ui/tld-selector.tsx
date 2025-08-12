@@ -100,6 +100,7 @@ const TldSelector: React.FC<TldSelectorProps> = ({
 
   // Selection counter color logic
   const count = selected?.length ?? 0;
+  const selectedCount = count;
   let counterColor = "text-muted-foreground";
   if (count >= 40 && count < MAX_TLDS) {
     counterColor = "text-amber-600 dark:text-amber-400";
@@ -109,18 +110,22 @@ const TldSelector: React.FC<TldSelectorProps> = ({
 
   return (
     <section aria-label="Top-level domain selector">
-      <div className="mb-4">
-        <FormLabel className="text-lg font-medium tracking-tight text-foreground">
+      <div>
+        <FormLabel className="mb-1 block text-lg font-medium tracking-tight text-foreground">
           Choose TLDs to check
           <span className="ml-2 text-sm font-medium text-muted-foreground">({selected?.length ?? 0} selected)</span>
         </FormLabel>
-        <FormDescription className="text-sm font-normal text-muted-foreground/90">Type or select up to 50 extensions.</FormDescription>
+        <FormDescription className="mt-0 mb-2 text-sm font-normal text-muted-foreground">Type or select up to 50 extensions.</FormDescription>
       </div>
 
       {/* Toolbar Row: Search, Custom, Counter+CTA cluster */}
-      <div className="grid grid-cols-12 items-center gap-x-2 mb-3 sm:grid-cols-[3fr_2fr_auto_auto]">
-        {/* Search TLDs (known list + customs via Enter) */}
-        <div className="col-span-12 sm:col-span-1">
+      <div
+        role="toolbar"
+        aria-label="TLD tools"
+        className="flex flex-wrap items-center gap-x-3 gap-y-2 mb-2 sm:mb-2.5"
+      >
+        {/* Search (Popover Combobox) */}
+        <div className="flex-1 min-w-[220px] sm:min-w-[260px]">
           <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
               <Button
@@ -128,7 +133,8 @@ const TldSelector: React.FC<TldSelectorProps> = ({
                 type="button"
                 role="combobox"
                 aria-expanded={open}
-                className="w-full justify-between h-10"
+                aria-label="Search TLDs"
+                className="w-full justify-between h-10 focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               >
                 Search TLDs...
                 <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -165,7 +171,9 @@ const TldSelector: React.FC<TldSelectorProps> = ({
                     setOpen(false);
                   }}
                   placeholder="Search known TLDs or type a custom one..."
-                  className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  aria-label="Search known TLDs or type a custom one"
+                  aria-controls="tld-grid"
+                  className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground placeholder:text-muted-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/60 focus:ring-offset-2 focus:ring-offset-background"
                 />
               </div>
               <Command>
@@ -205,7 +213,7 @@ const TldSelector: React.FC<TldSelectorProps> = ({
         </div>
 
         {/* Add custom TLD */}
-        <div className="col-span-12 sm:col-span-1">
+        <div className="flex-1 min-w-[220px] sm:min-w-[260px]">
           <input
             type="text"
             value={custom}
@@ -232,22 +240,36 @@ const TldSelector: React.FC<TldSelectorProps> = ({
             }}
             placeholder="Add custom TLD…"
             aria-label="Add custom TLD"
-            className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm font-medium text-foreground placeholder:text-muted-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            aria-describedby="tld-live"
+            className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm font-medium text-foreground placeholder:text-muted-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/60 focus:ring-offset-2 focus:ring-offset-background"
           />
         </div>
 
-        {/* Counter + CTA cluster */}
-        <div className="col-span-12 sm:col-span-2 h-10 flex items-center justify-end gap-2">
-          <div className="h-10 flex items-center text-right whitespace-nowrap">
-            <span className="text-sm font-medium text-foreground/80">{selected?.length ?? 0}</span>
-            {" / "}
-            <span className="text-sm font-normal text-foreground/80">{MAX_TLDS}</span>
-          </div>
-          <Button type="button" className="min-w-[148px] h-10 font-semibold">
-            ✨ Find My Domains
-          </Button>
-        </div>
+        {/* Counter */}
+        <span className="shrink-0 tabular-nums text-sm text-muted-foreground">
+          {(selected?.length ?? 0)}/{MAX_TLDS}
+          <span className="sr-only" role="status" aria-live="polite">{`${selected?.length ?? 0} of ${MAX_TLDS} TLDs selected`}</span>
+        </span>
+
+        {/* CTA (small) */}
+        <Button type="button" className="shrink-0 min-w-[148px] h-10 font-semibold">
+          ✨ Find My Domains
+        </Button>
       </div>
+
+      {/* Screen‑reader helpers + live region */}
+      <p id="tld-help" className="sr-only">
+        Type to filter TLDs. Use Tab to move to the list and Space to toggle items.
+      </p>
+      <p id="tld-add-help" className="sr-only">
+        Enter a TLD (like com or io) and press Enter to add.
+      </p>
+      <span id="tld-live" aria-live="polite" className="sr-only">
+        {selectedCount} TLD{selectedCount === 1 ? '' : 's'} selected out of 50.
+      </span>
+      <a href="#tld-grid" className="sr-only focus:not-sr-only focus:underline">
+        Skip to TLD list
+      </a>
 
       {/* Inline messages under toolbar */}
       {(capMessage || inputError) && (
@@ -261,112 +283,147 @@ const TldSelector: React.FC<TldSelectorProps> = ({
         </div>
       )}
 
-      {/* Favorites row */}
-      {favoriteTlds.length > 0 && (
+      {(favoriteTlds.length > 0 || recentTlds.length > 0) && (
         <>
-          <div className="mb-3">
-            <div className="text-xs font-semibold tracking-wide text-muted-foreground mb-1">
-              Favorites
-              {favSelectedCount > 0 && (
-                <span className="ml-2 text-[11px] font-medium text-muted-foreground">
-                  ({favSelectedCount} selected)
-                </span>
-              )}
-            </div>
-            <div className="flex sm:flex-wrap flex-nowrap overflow-x-auto gap-2 whitespace-nowrap">
-              {favoriteTlds.map((tld) => {
+          {/* ───────────────── Final Combined Meta Row: Favorites + Recently Used ───────────────── */}
+          <div
+            className="flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-muted-foreground overflow-x-auto whitespace-nowrap -mx-1 px-1"
+          >
+            {/* Favorites */}
+            <div className="flex items-center gap-x-2 shrink-0">
+              <span className="shrink-0 mr-1.5">Favorites:</span>
+              {(favoriteTlds ?? []).map((tld: string) => {
                 const pressed = isChecked(tld);
                 return (
-                  <Button
-                    key={tld}
-                    variant={pressed ? "secondary" : "outline"}
-                    size="sm"
-                    type="button"
-                    aria-pressed={pressed}
-                    aria-label={`${pressed ? "Remove" : "Add"} ${tld} ${pressed ? "from" : "to"} selection`}
-                    className="h-7 px-2"
-                    onClick={() => {
-                      if (pressed) {
-                        onChange((selected || []).filter((v) => v !== tld));
-                      } else {
-                        if (tryAddTld(tld)) {
-                          try { touchRecent(tld); } catch {}
+                  <span key={`fav-${tld}`} className="inline-block align-middle">
+                    <Button
+                      variant={pressed ? "secondary" : "outline"}
+                      size="sm"
+                      type="button"
+                      aria-pressed={pressed}
+                      aria-label={`${pressed ? "Remove" : "Add"} ${tld} ${pressed ? "from" : "to"} selection`}
+                      className="h-7 px-2 focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                      onClick={() => {
+                        if (pressed) {
+                          onChange((selected || []).filter((v) => v !== tld));
+                        } else {
+                          if (tryAddTld(tld)) {
+                            try { touchRecent(tld); } catch {}
+                          }
                         }
-                      }
-                    }}
-                  >
-                    {tld}
-                  </Button>
+                      }}
+                    >
+                      {tld}
+                    </Button>
+                  </span>
+                );
+              })}
+            </div>
+            {/* Recently used */}
+            <div className="flex items-center gap-x-2 shrink-0">
+              <span className="shrink-0 mr-1.5">Recently used:</span>
+              {(recentTlds ?? []).map((tld: string) => {
+                const pressed = isChecked(tld);
+                return (
+                  <span key={`rec-${tld}`} className="inline-block align-middle">
+                    <Button
+                      variant={pressed ? "secondary" : "outline"}
+                      size="sm"
+                      type="button"
+                      aria-pressed={pressed}
+                      aria-label={`${pressed ? "Remove" : "Add"} ${tld} ${pressed ? "from" : "to"} selection`}
+                      className="h-7 px-2 focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                      onClick={() => {
+                        if (pressed) {
+                          onChange((selected || []).filter((v) => v !== tld));
+                        } else {
+                          if (tryAddTld(tld)) {
+                            try { touchRecent(tld); } catch {}
+                          }
+                        }
+                      }}
+                    >
+                      {tld}
+                    </Button>
+                  </span>
                 );
               })}
             </div>
           </div>
-          {/* Divider: Favorites → Recently Used */}
-          <div className="border-t border-muted/30 my-3" />
+          {/* ───────────────── End Final Combined Meta Row ───────────────── */}
         </>
       )}
-      {/* Recently Used row */}
-      {recentTlds.length > 0 && (
-        <>
-          <div className="mb-3">
-            <div className="text-xs font-semibold tracking-wide text-muted-foreground mb-1">
-              Recently Used
-              {recentSelectedCount > 0 && (
-                <span className="ml-2 text-[11px] font-medium text-muted-foreground">
-                  ({recentSelectedCount} selected)
-                </span>
-              )}
-            </div>
-            <div className="flex sm:flex-wrap flex-nowrap overflow-x-auto gap-2 whitespace-nowrap">
-              {recentTlds.map((tld) => {
-                const pressed = isChecked(tld);
-                return (
-                  <Button
-                    key={tld}
-                    variant={pressed ? "secondary" : "outline"}
-                    size="sm"
-                    type="button"
-                    aria-pressed={pressed}
-                    aria-label={`${pressed ? "Remove" : "Add"} ${tld} ${pressed ? "from" : "to"} selection`}
-                    className="h-7 px-2"
-                    onClick={() => {
-                      if (pressed) {
-                        onChange((selected || []).filter((v) => v !== tld));
-                      } else {
-                        if (tryAddTld(tld)) {
-                          try { touchRecent(tld); } catch {}
-                        }
-                      }
-                    }}
-                  >
-                    {tld}
-                  </Button>
-                );
-              })}
-            </div>
-          </div>
-          {/* Divider: Recently Used → Popular */}
-          <div className="border-t border-muted/30 my-3" />
-        </>
-      )}
+      {/* Divider: Recently Used → Popular */}
 
-      {/* Popular pills / checkboxes */}
-      <div className="flex items-center gap-4 flex-wrap">
-        {popular.map((tld) => (
-          <div key={tld} className="flex flex-row items-center space-x-2 space-y-0">
-            <Checkbox
-              checked={isChecked(tld)}
-              onCheckedChange={(c) => toggle(tld, c)}
-              aria-label={`Toggle ${tld}`}
-              className="border-primary/70"
-            />
-            <span className={`text-sm ${isChecked(tld) ? "font-semibold" : "font-medium"} text-foreground select-none`}>{tld}</span>
-          </div>
-        ))}
-      </div>
+      {/* selectable tlds — auto‑fill grid */}
+      {
+        // DEV ONLY: widen list temporarily to see multi-row grid; remove before committing to master
+      }
+      {
+        (() => {
+          // Inserted after secondary definition, but must be here for scoping
+          let gridList = popular;
+          if (
+            process.env.NODE_ENV === "development" &&
+            Array.isArray(secondary) &&
+            gridList.length < 18
+          ) {
+            gridList = [...popular, ...secondary.slice(0, 24)];
+          }
+          return (
+            <>
+              <h4 id="tld-grid-label" className="sr-only">Available TLD options</h4>
+              <div
+                id="tld-grid"
+                role="listbox"
+                aria-labelledby="tld-grid-label"
+                aria-multiselectable="true"
+                className="
+    grid
+    grid-cols-[repeat(auto-fill,minmax(100px,1fr))]
+    max-sm:grid-cols-[repeat(auto-fill,minmax(90px,1fr))]
+    gap-2 sm:gap-2.5
+    items-start
+    mt-1 sm:mt-2
+  "
+              >
+                {gridList.map((tld) => (
+                  <div
+                    key={tld}
+                    role="option"
+                    aria-selected={isChecked(tld)}
+                    tabIndex={0}
+                    onClick={() => toggle(tld, !isChecked(tld))}
+                    onKeyDown={(e) => {
+                      if (e.key === " " || e.key === "Enter") {
+                        e.preventDefault();
+                        toggle(tld, !isChecked(tld));
+                      }
+                    }}
+                    className={`min-w-0 min-h-[40px] flex items-center gap-2 h-7 px-2 rounded-md cursor-pointer select-none transition-colors transition-transform duration-150 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background hover:bg-accent hover:text-accent-foreground ${isChecked(tld) ? "font-semibold bg-accent text-accent-foreground" : "font-medium"}`}
+                  >
+                    <Checkbox
+                      checked={isChecked(tld)}
+                      onCheckedChange={(c) => toggle(tld, c)}
+                      aria-label={`Toggle ${tld}`}
+                      className="border-primary/70"
+                    />
+                    <span
+                      title={tld}
+                      className={`truncate text-sm ${isChecked(tld) ? "font-semibold" : "font-medium"} text-foreground select-none`}
+                    >
+                      {tld}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </>
+          );
+        })()
+      }
 
       {/* Chips for selected TLDs */}
-      <div className="mt-4 flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-1.5 sm:gap-2 mt-2 sm:mt-2.5">
           {(selected ?? []).map((tld) => (
           <Badge key={tld} variant="secondary" className="pl-2 pr-1 flex items-center gap-1 font-semibold text-foreground">
               {tld}
