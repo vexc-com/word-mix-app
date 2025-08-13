@@ -7,10 +7,7 @@ import {
   Copy,
   Download,
   Loader2,
-  Sparkles,
   X,
-  MoreHorizontal,
-  Trash2,
 } from "lucide-react";
 
 import {
@@ -38,20 +35,11 @@ import {
 } from "@/components/ui/form";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import TiltCard from "@/components/ui/tilt-card";
 import { useToast } from "@/hooks/use-toast";
 import ResultsTable from "@/components/ui/ResultsTable";
 import TldSelector from "@/components/ui/tld-selector";
-
-
 
 /* ───────────────────────────────────────── */
 
@@ -77,19 +65,40 @@ export default function DomainSeekerPage() {
 
   // state
   const [availableDomains, setAvailableDomains] = useState<DomainResult[]>([]);
-  const [unavailableDomains, setUnavailableDomains] = useState<DomainResult[]>([]);
-  const [errors, setErrors] = useState<{ domain: string; error?: string }[]>([]);
+  const [unavailableDomains, setUnavailableDomains] = useState<DomainResult[]>(
+    []
+  );
+  const [errors, setErrors] = useState<{ domain: string; error?: string }[]>(
+    []
+  );
   const [progress, setProgress] = useState(0);
   const [totalChecks, setTotalChecks] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [copiedDomain, setCopiedDomain] = useState<string | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const searchCancelled = useRef(false);
-  const [selectedDomains, setSelectedDomains] = useState<Set<string>>(new Set());
+  const controllerRef = useRef<AbortController | null>(null);
+  const [selectedDomains, setSelectedDomains] = useState<Set<string>>(
+    new Set()
+  );
 
   // refs to track counts
   const availableCountRef = useRef(0);
   const unavailableCountRef = useRef(0);
+  const resultsRef = useRef<HTMLDivElement | null>(null);
+  // CTA sentinel for sticky footer
+  const ctaSentinelRef = useRef<HTMLDivElement | null>(null);
+  const [sentinelInView, setSentinelInView] = useState(true);
+  const stickyVisible = isSearching || (totalChecks > 0 && !sentinelInView);
+  useEffect(() => {
+    const el = ctaSentinelRef.current;
+    if (!el) return;
+    const io = new window.IntersectionObserver(([entry]) => {
+      setSentinelInView(entry.isIntersecting);
+    });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
 
   // react-hook-form
   const form = useForm<z.infer<typeof formSchema>>({
@@ -109,9 +118,10 @@ export default function DomainSeekerPage() {
   // recompute totalChecks on form change
   useEffect(() => {
     const { keywords1, keywords2, tlds } = form.getValues();
-    const a = splitKeywords(keywords1 || "") || [""];
-    const b = splitKeywords(keywords2 || "") || [""];
-    const combos = (a.length || 1) * (b.length || 1);
+    const a = splitKeywords(keywords1 || "");
+    const b = splitKeywords(keywords2 || "");
+    const hasAny = a.length > 0 || b.length > 0;
+    const combos = hasAny ? Math.max(a.length, 1) * Math.max(b.length, 1) : 0;
     setTotalChecks(combos * (tlds?.length || 0));
   }, [formValues, form]);
 
@@ -119,7 +129,7 @@ export default function DomainSeekerPage() {
   const handlePresetChange = (
     value: string,
     list: "list1" | "list2",
-    onChange: (v: string) => void,
+    onChange: (v: string) => void
   ) => {
     if (!value) return;
     const presets = list === "list1" ? presetLists1 : presetLists2;
@@ -145,32 +155,38 @@ export default function DomainSeekerPage() {
     setErrors([]);
     setProgress(0);
     setError(null);
+    // bring results into view
+    setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
     searchCancelled.current = false;
     availableCountRef.current = 0;
     unavailableCountRef.current = 0;
 
-    /* build domain list */
+    /* build domain list (deduped) */
     const { keywords1, keywords2, tlds } = values;
     const list1 = splitKeywords(keywords1);
     const list2 = splitKeywords(keywords2 ?? "");
     const first = list1.length ? list1 : [""];
     const second = list2.length ? list2 : [""];
 
-    const domains: string[] = [];
+    const domainSet = new Set<string>();
     for (const a of first) {
       for (const b of second) {
         const base = (a + b).toLowerCase();
         if (!base) continue;
-        for (const t of tlds) domains.push(base + t);
+        for (const t of tlds) domainSet.add(base + t);
       }
     }
+    const domains = Array.from(domainSet);
 
     startTransition(async () => {
       try {
+        const controller = new AbortController();
+        controllerRef.current = controller;
         const res = await fetch("/api/check-bulk-stream", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ domains, rps: 1 }),
+          signal: controller.signal,
         });
         if (!res.body) throw new Error("Stream unavailable");
 
@@ -281,10 +297,17 @@ export default function DomainSeekerPage() {
       });
       return;
     }
-    const list = availableDomains.filter((_, i) => selectedDomains.has(String(i)));
+    const list = availableDomains.filter((_, i) =>
+      selectedDomains.has(String(i))
+    );
     const text = list.map((d) => d.domain).join("\n");
     navigator.clipboard.writeText(text).then(() => {
-      toast({ title: "Copied", description: `${list.length} domain${list.length === 1 ? "" : "s"} copied to clipboard.` });
+      toast({
+        title: "Copied",
+        description: `${list.length} domain${
+          list.length === 1 ? "" : "s"
+        } copied to clipboard.`,
+      });
     });
   };
 
@@ -296,10 +319,9 @@ export default function DomainSeekerPage() {
       toast({
         variant: "destructive",
         title: "Nothing to export",
-        description:
-          selectedDomains.size
-            ? "No selected available domains to export."
-            : "Run a search first, then export.",
+        description: selectedDomains.size
+          ? "No selected available domains to export."
+          : "Run a search first, then export.",
       });
       return;
     }
@@ -323,7 +345,9 @@ export default function DomainSeekerPage() {
 
     toast({
       title: "CSV exported",
-      description: `${list.length} ${selectedDomains.size ? "selected " : ""}domains saved with header row.`,
+      description: `${list.length} ${
+        selectedDomains.size ? "selected " : ""
+      }domains saved with header row.`,
     });
   };
 
@@ -340,7 +364,9 @@ export default function DomainSeekerPage() {
     }
 
     const txt = list.map((d) => d.domain).join("\n");
-    const blob = new Blob([txt.replace(/\n/g, "\r\n")], { type: "text/plain;charset=utf-8;" });
+    const blob = new Blob([txt.replace(/\n/g, "\r\n")], {
+      type: "text/plain;charset=utf-8;",
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     const stamp = new Date().toISOString().slice(0, 10);
@@ -350,23 +376,29 @@ export default function DomainSeekerPage() {
     a.click();
     document.body.removeChild(a);
 
-    toast({ title: "TXT exported", description: `${list.length} domain${list.length === 1 ? "" : "s"} saved.` });
+    toast({
+      title: "TXT exported",
+      description: `${list.length} domain${
+        list.length === 1 ? "" : "s"
+      } saved.`,
+    });
   };
-
 
   const handleCancelSearch = () => {
     searchCancelled.current = true;
+    try { controllerRef.current?.abort(); } catch {}
+    controllerRef.current = null;
     setIsSearching(false);
     setProgress(0);
   };
 
   /* ─────────── UI rendering ─────────── */
   return (
-    <main className="container mx-auto max-w-4xl px-4 py-16 md:py-24">
+    <main className={"container mx-auto max-w-4xl px-4 py-16 md:py-24" + (stickyVisible ? " pb-36" : "")}>
       {/* header */}
       <div className="bg-gradient-to-b from-purple-50 to-white dark:from-slate-900/40 dark:to-slate-950 pt-8 pb-6 text-center animate-fade-in-down">
         <h1 className="text-5xl md:text-6xl lg:text-7xl leading-tight font-extrabold tracking-tight bg-gradient-to-r from-indigo-600 to-pink-500 text-transparent bg-clip-text">
-        Word Mix
+          Word Mix
         </h1>
         <p className="mt-6 max-w-2xl mx-auto text-lg md:text-xl text-muted-foreground">
           Mix words. Find names. Launch faster. 🚀
@@ -390,24 +422,26 @@ export default function DomainSeekerPage() {
                   <FormItem>
                     <div className="flex justify-between items-center mb-2">
                       <FormLabel>Prefix Keywords</FormLabel>
-                      <Select
-                        onValueChange={(v) =>
-                          handlePresetChange(v, "list1", field.onChange)
+                      <select
+                        className="w-[180px] h-9 border rounded-md px-2 bg-background"
+                        defaultValue=""
+                        onChange={(e) =>
+                          handlePresetChange(
+                            e.target.value,
+                            "list1",
+                            field.onChange
+                          )
                         }
                       >
-                        <div className="relative group gradient-border rounded-md">
-                          <SelectTrigger className="w-[180px] h-9 border-2 border-transparent">
-                            <SelectValue placeholder="Load a preset..." />
-                          </SelectTrigger>
-                        </div>
-                        <SelectContent>
-                          {Object.keys(presetLists1).map((name) => (
-                            <SelectItem key={name} value={name}>
-                              {name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        <option value="" disabled>
+                          Load a preset...
+                        </option>
+                        {Object.keys(presetLists1).map((name) => (
+                          <option key={name} value={name}>
+                            {name}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                     <FormControl>
                       <Textarea
@@ -428,24 +462,26 @@ export default function DomainSeekerPage() {
                   <FormItem>
                     <div className="flex justify-between items-center mb-2">
                       <FormLabel>Suffix Keywords (Optional)</FormLabel>
-                      <Select
-                        onValueChange={(v) =>
-                          handlePresetChange(v, "list2", field.onChange)
+                      <select
+                        className="w-[180px] h-9 border rounded-md px-2 bg-background"
+                        defaultValue=""
+                        onChange={(e) =>
+                          handlePresetChange(
+                            e.target.value,
+                            "list2",
+                            field.onChange
+                          )
                         }
                       >
-                        <div className="relative group gradient-border rounded-md">
-                          <SelectTrigger className="w-[180px] h-9 border-2 border-transparent">
-                            <SelectValue placeholder="Load a preset..." />
-                          </SelectTrigger>
-                        </div>
-                        <SelectContent>
-                          {Object.keys(presetLists2).map((name) => (
-                            <SelectItem key={name} value={name}>
-                              {name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        <option value="" disabled>
+                          Load a preset...
+                        </option>
+                        {Object.keys(presetLists2).map((name) => (
+                          <option key={name} value={name}>
+                            {name}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                     <FormControl>
                       <Textarea
@@ -465,10 +501,17 @@ export default function DomainSeekerPage() {
               name="tlds"
               render={({ field }) => (
                 <>
-                  <a href="#tld-grid" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 bg-primary text-primary-foreground px-3 py-2 rounded-md shadow">Skip to TLD list</a>
+                  <a
+                    href="#tld-grid"
+                    className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 bg-primary text-primary-foreground px-3 py-2 rounded-md shadow"
+                  >
+                    Skip to TLD list
+                  </a>
                   <section aria-labelledby="tld-heading">
                     <FormItem>
-                      <h3 id="tld-heading" className="sr-only">Choose TLDs to check</h3>
+                      <h3 id="tld-heading" className="sr-only">
+                        Choose TLDs to check
+                      </h3>
                       <TldSelector
                         selected={field.value || []}
                         onChange={field.onChange}
@@ -476,61 +519,57 @@ export default function DomainSeekerPage() {
                         allKnown={knownTlds}
                       />
                       <FormMessage />
+
+                      {/* Inline CTA appears before scrolling past TLDs */}
+                      {totalChecks > 0 && sentinelInView && !isSearching && (
+                        <div className="mt-4 flex justify-end">
+                          <Button type="submit" className="btn-gradient">
+                            ✨ Find My Domains ({totalChecks})
+                          </Button>
+                        </div>
+                      )}
                     </FormItem>
                     {/* end of TLD section */}
+                    <div
+                      ref={ctaSentinelRef}
+                      aria-hidden="true"
+                      className={stickyVisible ? "h-28" : "h-2"}
+                    />
                   </section>
                 </>
               )}
             />
+            {totalChecks === 0 && (
+              <p className="mt-2 text-sm text-muted-foreground">
+                Add at least one keyword to enable search.
+              </p>
+            )}
 
-            {/* submit + cancel */}
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-6">
-              <div className="flex items-center gap-4">
-                <Button
-                  type="submit"
-                  size="lg"
-                  disabled={
-                    isSearching || totalChecks > MAX_DOMAINS || totalChecks === 0
-                  }
-                  className="w-full sm:w-auto btn-gradient font-semibold"
-                >
-                  {isSearching ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Checking...
-                    </>
-                  ) : (
-                    <>✨ Find My Domains</>
-                  )}
-                </Button>
-                {isSearching && (
-                  <Button
-                    type="button"
-                    size="lg"
-                    variant="outline"
-                    onClick={handleCancelSearch}
-                    className="w-full sm:w-auto"
-                  >
-                    <X className="mr-2 h-4 w-4" />
+            {/* sticky footer CTA */}
+            {stickyVisible && (
+              <div className="fixed left-1/2 bottom-8 sm:bottom-10 -translate-x-1/2 z-40 rounded-xl border bg-background shadow-xl">
+                <div className="px-3 pt-2 pb-1 flex items-center gap-2">
+                  <Button type="button" disabled className="btn-gradient h-9 px-4">
+                    Checking…
+                  </Button>
+                  <Button type="button" variant="outline" className="h-9 px-4" onClick={handleCancelSearch}>
                     Cancel
                   </Button>
-                )}
+                  <span className="ml-2 text-xs text-muted-foreground tabular-nums">
+                    {totalChecks}/{MAX_DOMAINS}
+                  </span>
+                </div>
+                <div className="px-3 pb-2">
+                  <Progress value={progress} className="h-1" aria-label="Progress" />
+                </div>
               </div>
-              <div
-                className={`text-base ${totalChecks > MAX_DOMAINS
-                    ? "text-red-500"
-                    : "text-muted-foreground/90"
-                  }`}
-              >
-                {totalChecks} / {MAX_DOMAINS} domains
-              </div>
-            </div>
+            )}
           </form>
         </Form>
       </div>
 
       {/* progress bar / messages */}
-      {isSearching && progress < 100 && (
+      {isSearching && progress < 100 && !stickyVisible && (
         <div className="mt-12 px-2">
           <p className="text-sm text-center text-muted-foreground">
             Checking {totalChecks} domains. This may take a moment...
@@ -558,6 +597,7 @@ export default function DomainSeekerPage() {
 
       {/* results */}
       <div
+        ref={resultsRef}
         className="mt-12 grid md:grid-cols-2 gap-8 animate-fade-in-up"
         style={{ animationDelay: "0.5s" }}
       >
@@ -577,8 +617,14 @@ export default function DomainSeekerPage() {
                   variant="outline"
                   size="sm"
                   onClick={copySelected}
-                  disabled={selectedDomains.size === 0}
-                  title={selectedDomains.size ? `Copy ${selectedDomains.size} selected` : "Select rows to enable"}
+                  disabled={availableDomains.length === 0 || selectedDomains.size === 0}
+                  title={
+                    availableDomains.length === 0
+                      ? "No results to copy"
+                      : selectedDomains.size
+                      ? `Copy ${selectedDomains.size} selected`
+                      : "Select rows to enable"
+                  }
                 >
                   <Copy className="h-4 w-4 mr-2" />
                   Copy ({selectedDomains.size})
@@ -588,8 +634,14 @@ export default function DomainSeekerPage() {
                   variant="outline"
                   size="sm"
                   onClick={exportToTxt}
-                  disabled={selectedDomains.size === 0}
-                  title={selectedDomains.size ? `Export ${selectedDomains.size} selected as .txt` : "Export selected as .txt"}
+                  disabled={availableDomains.length === 0 || selectedDomains.size === 0}
+                  title={
+                    availableDomains.length === 0
+                      ? "No results to export"
+                      : selectedDomains.size
+                      ? `Export ${selectedDomains.size} selected as .txt`
+                      : "Export selected as .txt"
+                  }
                 >
                   <Download className="h-4 w-4 mr-2" />
                   TXT ({selectedDomains.size})
@@ -599,8 +651,14 @@ export default function DomainSeekerPage() {
                   variant="outline"
                   size="sm"
                   onClick={exportToCsv}
-                  disabled={selectedDomains.size === 0}
-                  title={selectedDomains.size ? `Export ${selectedDomains.size} selected as .csv` : "Export selected as .csv"}
+                  disabled={availableDomains.length === 0 || selectedDomains.size === 0}
+                  title={
+                    availableDomains.length === 0
+                      ? "No results to export"
+                      : selectedDomains.size
+                      ? `Export ${selectedDomains.size} selected as .csv`
+                      : "Export selected as .csv"
+                  }
                 >
                   <Download className="h-4 w-4 mr-2" />
                   CSV ({selectedDomains.size})
@@ -622,7 +680,6 @@ export default function DomainSeekerPage() {
                 </p>
               )}
             </CardContent>
-
           </Card>
         </TiltCard>
 
