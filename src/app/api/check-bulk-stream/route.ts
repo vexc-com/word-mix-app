@@ -10,14 +10,28 @@ const BATCH_SIZE  = 2;        // 2 domains per Dynadot request
 const TIMEOUT_MS  = 20_000;   // hard stop per HTTP request
 const MAX_RETRY   = 5;        // exponential-back-off attempts (left in place)
 
+/** TLDs that require multi-year minimum registration (total due at checkout) */
+const MIN_YEARS: Record<string, number> = {
+  ai: 2, // .AI requires 2 years
+};
+
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
 
+const formatUsd = (n: number) =>
+  new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(n);
+
 /* ------------------------------------------------------------------ */
-/* Low-level call to Dynadot “search”                                 */
+/* Low-level call to Dynadot “search” (with price)                     */
 /* ------------------------------------------------------------------ */
 async function callDynadot(domains: string[]) {
   const params = domains.map((d, i) => `domain${i}=${encodeURIComponent(d)}`).join("&");
-  const url    = `${DYNA_BASE}?key=${API_KEY}&command=search&${params}`;
+  // Include pricing in USD so we can show $ immediately in the UI
+  const url    = `${DYNA_BASE}?key=${API_KEY}&command=search&show_price=1&currency=USD&${params}`;
 
   const ctrl = new AbortController();
   const t    = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
@@ -42,20 +56,54 @@ async function callDynadot(domains: string[]) {
 
     /* ── parse Dynadot’s SearchResponse ───────────────────────────── */
     const json     = JSON.parse(text);
+    console.log("[Dynadot] Parsed:", JSON.stringify(json, null, 2));
     const rawList  = json?.SearchResponse?.SearchResults ?? [];
 
     return rawList.map((r: any) => {
       // Dynadot sometimes uses DomainName, sometimes Domain
-      const domainName = r.DomainName ?? r.Domain ?? "";
+      const domainName = String(r.DomainName ?? r.Domain ?? "").toLowerCase();
+
+      const tld = domainName.split(".").pop() ?? "";
+      const minYears = MIN_YEARS[tld] ?? 1;
+
       // Available comes back as "yes"/"no"
       const isAvailable =
         typeof r.Available === "string"
           ? r.Available.toLowerCase().startsWith("y")
           : Boolean(r.Available);
 
+      // Price is a free-text string when show_price=1, e.g. "8.99 in USD"
+      const rawPrice: string | undefined = typeof r.Price === "string" ? r.Price : undefined;
+      let priceUsd: number | null = null;
+      let priceDisplay: string | null = null;
+
+      if (rawPrice) {
+        const m = rawPrice.match(/([0-9]+(?:\.[0-9]+)?)/);
+        if (m) {
+          const base = parseFloat(m[1]);
+          if (!Number.isNaN(base)) {
+            const total = base * minYears; // adjust for multi-year minimums
+            // round to cents to avoid FP artifacts
+            priceUsd = Math.round((total + Number.EPSILON) * 100) / 100;
+            // Spec: "$8.99" only (no "/yr")
+            priceDisplay = formatUsd(priceUsd);
+          }
+        }
+      }
+
+      // Improved premium detection (updated logic)
+      const lowerPrice = (rawPrice ?? "").toLowerCase();
+      const isPremium = lowerPrice.includes("is a premium domain") &&
+                        !lowerPrice.includes("is not a premium domain");
+
       return {
         domain: domainName,
         available: isAvailable,
+        // New fields for UI
+        priceUsd: priceUsd,                 // number | null
+        price: priceDisplay,                // "$8.99" | null
+        isPremium: isPremium,               // boolean
+        // keep error semantics
         error: r.Status !== "success" ? r.Status : undefined,
       };
     });
@@ -95,7 +143,10 @@ export async function POST(req: NextRequest) {
               enc.encode(
                 JSON.stringify({
                   domain:     r.domain,
-                  available:  r.available,       // **boolean now**
+                  available:  r.available,             // boolean
+                  price:      r.price ?? null,         // "$8.99" or null
+                  priceUsd:   r.priceUsd ?? null,      // number or null
+                  premium:    r.isPremium ?? false,    // boolean
                   error:      r.error ?? null,
                 }) + "\n"
               )
@@ -111,6 +162,9 @@ export async function POST(req: NextRequest) {
                 JSON.stringify({
                   domain:    d,
                   available: null,
+                  price:     null,
+                  priceUsd:  null,
+                  premium:   false,
                   error:     err.message || String(err),
                 }) + "\n"
               )

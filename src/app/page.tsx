@@ -219,6 +219,9 @@ export default function DomainSeekerPage() {
               available?: boolean;
               error?: string;
               event?: string;
+              price?: string | null;
+              priceUsd?: number | null;
+              premium?: boolean;
             } = JSON.parse(line);
 
             // DONE event: read from refs
@@ -241,29 +244,43 @@ export default function DomainSeekerPage() {
             }
 
             if (msg.domain) {
-              setRunDone((d) => d + 1);
+  setRunDone((d) => d + 1);
 
-              if (msg.available === true) {
-                availableCountRef.current += 1;
-                setAvailableDomains((prev) => [
-                  ...prev,
-                  { domain: msg.domain, status: "available" } as DomainResult,
-                ]);
-              } else if (msg.available === false) {
-                unavailableCountRef.current += 1;
-                setUnavailableDomains((prev) => [
-                  ...prev,
-                  { domain: msg.domain, status: "unavailable" } as DomainResult,
-                ]);
-              } else {
-                setErrors((prev) => [
-                  ...prev,
-                  { domain: msg.domain ?? "?", error: msg.error },
-                ]);
-              }
-            }
-          }
+  if (msg.available === true) {
+    availableCountRef.current += 1;
+    setAvailableDomains((prev) => [
+      ...prev,
+      {
+        domain: msg.domain,
+        status: "available",
+        price: msg.price ?? null,
+        priceUsd: msg.priceUsd ?? null,
+        premium: msg.premium === true,
+      } as DomainResult,
+    ]);
+  } else if (msg.available === false) {
+    unavailableCountRef.current += 1;
+    setUnavailableDomains((prev) => [
+      ...prev,
+      {
+        domain: msg.domain,
+        status: "unavailable",
+        price: msg.price ?? null,
+        priceUsd: msg.priceUsd ?? null,
+        premium: msg.premium === true,
+      } as DomainResult,
+    ]);
+  } else {
+    setErrors((prev) => [
+      ...prev,
+      { domain: msg.domain ?? "?", error: msg.error },
+    ]);
+  }
+}
+
         }
+        }
+
       } catch (e) {
         const message =
           e instanceof Error ? e.message : "An unknown error occurred.";
