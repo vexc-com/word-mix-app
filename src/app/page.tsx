@@ -17,7 +17,7 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 
-import { useEffect, useRef, useState, startTransition } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -72,6 +72,8 @@ export default function DomainSeekerPage() {
     []
   );
   const [progress, setProgress] = useState(0);
+  const [runTotal, setRunTotal] = useState(0);  // # of domains in this run
+  const [runDone, setRunDone]   = useState(0);  // # processed in this run
   const [totalChecks, setTotalChecks] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [copiedDomain, setCopiedDomain] = useState<string | null>(null);
@@ -89,7 +91,7 @@ export default function DomainSeekerPage() {
   // CTA sentinel for sticky footer
   const ctaSentinelRef = useRef<HTMLDivElement | null>(null);
   const [sentinelInView, setSentinelInView] = useState(true);
-  const stickyVisible = isSearching || (totalChecks > 0 && !sentinelInView);
+  const stickyVisible = isSearching || (runTotal > 0 && !sentinelInView);
   useEffect(() => {
     const el = ctaSentinelRef.current;
     if (!el) return;
@@ -124,6 +126,10 @@ export default function DomainSeekerPage() {
     const combos = hasAny ? Math.max(a.length, 1) * Math.max(b.length, 1) : 0;
     setTotalChecks(combos * (tlds?.length || 0));
   }, [formValues, form]);
+
+  useEffect(() => {
+    setProgress(runTotal ? Math.round((runDone / runTotal) * 100) : 0);
+  }, [runDone, runTotal]);
 
   /* preset dropdown handler */
   const handlePresetChange = (
@@ -177,8 +183,11 @@ export default function DomainSeekerPage() {
       }
     }
     const domains = Array.from(domainSet);
+    setRunTotal(domains.length);
+    setRunDone(0);
+    setIsSearching(true);
 
-    startTransition(async () => {
+    (async () => {
       try {
         const controller = new AbortController();
         controllerRef.current = controller;
@@ -193,7 +202,6 @@ export default function DomainSeekerPage() {
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
         let buffer = "";
-        let doneCnt = 0;
 
         while (true) {
           const { value, done } = await reader.read();
@@ -215,6 +223,7 @@ export default function DomainSeekerPage() {
 
             // DONE event: read from refs
             if (msg.event === "done") {
+              setRunDone(runTotal);
               setProgress(100);
               if (availableCountRef.current === 0) {
                 toast({
@@ -232,8 +241,7 @@ export default function DomainSeekerPage() {
             }
 
             if (msg.domain) {
-              doneCnt += 1;
-              setProgress(Math.round((doneCnt / domains.length) * 100));
+              setRunDone((d) => d + 1);
 
               if (msg.available === true) {
                 availableCountRef.current += 1;
@@ -268,7 +276,7 @@ export default function DomainSeekerPage() {
       } finally {
         if (!searchCancelled.current) setIsSearching(false);
       }
-    });
+    })();
   }
 
   /* clipboard, CSV export, cancel */
@@ -389,12 +397,14 @@ export default function DomainSeekerPage() {
     try { controllerRef.current?.abort(); } catch {}
     controllerRef.current = null;
     setIsSearching(false);
+    setRunTotal(0);
+    setRunDone(0);
     setProgress(0);
   };
 
   /* ─────────── UI rendering ─────────── */
   return (
-    <main className={"container mx-auto max-w-4xl px-4 py-16 md:py-24" + (stickyVisible ? " pb-36" : "")}>
+    <main className={"container mx-auto max-w-4xl px-4 py-16 md:py-24 " + (stickyVisible ? "pb-36 sm:pb-28" : "pb-8")}>
       {/* header */}
       <div className="bg-gradient-to-b from-purple-50 to-white dark:from-slate-900/40 dark:to-slate-950 pt-8 pb-6 text-center animate-fade-in-down">
         <h1 className="text-5xl md:text-6xl lg:text-7xl leading-tight font-extrabold tracking-tight bg-gradient-to-r from-indigo-600 to-pink-500 text-transparent bg-clip-text">
@@ -545,40 +555,38 @@ export default function DomainSeekerPage() {
               </p>
             )}
 
-            {/* sticky footer CTA */}
-            {stickyVisible && (
-              <div className="fixed left-1/2 bottom-8 sm:bottom-10 -translate-x-1/2 z-40 rounded-xl border bg-background shadow-xl">
-                <div className="px-3 pt-2 pb-1 flex items-center gap-2">
-                  <Button type="button" disabled className="btn-gradient h-9 px-4">
-                    Checking…
-                  </Button>
-                  <Button type="button" variant="outline" className="h-9 px-4" onClick={handleCancelSearch}>
-                    Cancel
-                  </Button>
-                  <span className="ml-2 text-xs text-muted-foreground tabular-nums">
-                    {totalChecks}/{MAX_DOMAINS}
-                  </span>
-                </div>
-                <div className="px-3 pb-2">
-                  <Progress value={progress} className="h-1" aria-label="Progress" />
-                </div>
-              </div>
-            )}
-          </form>
-        </Form>
+{/* sticky footer CTA */}
+{stickyVisible ? (
+  <div
+    role="status"
+    aria-live="polite"
+    aria-atomic="true"
+    className="fixed left-1/2 -translate-x-1/2 bottom-4 sm:bottom-6 z-50 px-2"
+  >
+    <div
+      className="w-fit rounded-2xl border bg-card/95 backdrop-blur p-2 shadow-lg"
+      style={{ maxWidth: "min(480px, calc(100vw - 1.5rem))" }}
+    >
+      <div className="flex items-center gap-2 px-3 pt-2 pb-1">
+        <Button type="button" disabled className="btn-gradient h-9 px-4">Checking…</Button>
+        <Button type="button" variant="outline" className="h-9 px-4" onClick={handleCancelSearch}>Cancel</Button>
+        <span className="ml-2 text-xs text-muted-foreground tabular-nums whitespace-nowrap">
+          {runDone}/{runTotal || 0}
+        </span>
       </div>
+      <Progress
+        value={runTotal ? Math.round((runDone / runTotal) * 100) : 0}
+        className="h-1 mt-1"
+      />
+    </div>
+  </div>
+) : null}
 
-      {/* progress bar / messages */}
-      {isSearching && progress < 100 && !stickyVisible && (
-        <div className="mt-12 px-2">
-          <p className="text-sm text-center text-muted-foreground">
-            Checking {totalChecks} domains. This may take a moment...
-          </p>
-          <Progress value={progress} className="mt-4" />
+            </form>
+          </Form>
         </div>
-      )}
 
-      {/* done message */}
+        {/* done message */}
       {!isSearching && progress === 100 && (
         <div
           className="text-center mt-12 animate-fade-in-up"

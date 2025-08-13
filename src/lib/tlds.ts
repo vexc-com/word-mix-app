@@ -21,7 +21,7 @@ export const allTlds: string[] = [
   ".online",
   ".info",
   ".biz",
-  ".mobi",
+  ".now",
   ".me",
   ".tv",
   ".ws",
